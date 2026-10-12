@@ -593,3 +593,40 @@ Before writing the first RTL module, the following must be specified:
 8. instruction/data memory interfaces;
 9. reset vector;
 10. first verification plan.
+
+
+
+## Register File Specification
+
+### Purpose
+
+The register file stores the integer architectural registers used by the processor datapath.
+
+### Architecture
+
+- 32 architectural integer registers: x0 through x31.
+- Register width: 64 bits.
+- Two combinational read ports.
+- One synchronous write port.
+- Read addresses and write address are 5 bits wide.
+- Write data and read data are 64 bits wide.
+
+### Behavioral Rules
+
+- Reads of x0 always return zero.
+- Writes to x0 are ignored.
+- A write occurs on the rising edge of clk when we is asserted and rd is not zero.
+- Reads are combinational.
+- Registers x1 through x31 are not reset by this module.
+- The contents of x1 through x31 are unspecified until software or hardware writes valid values to them.
+
+### Verification Requirements
+
+- Verify that reads from x0 always return zero.
+- Verify writes to ordinary registers.
+- Verify that writes to x0 are ignored.
+- Verify simultaneous reads from two different registers.
+- Verify read-after-write behavior.
+- Verify that writes are disabled when we is low.
+- Verify behavior immediately before and after the rising clock edge.
+- Verify reads and writes using boundary values, including zero, the most significant bit, and all bits set to one.
