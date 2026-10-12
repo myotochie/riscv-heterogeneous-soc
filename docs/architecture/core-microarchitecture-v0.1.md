@@ -630,3 +630,58 @@ The register file stores the integer architectural registers used by the process
 - Verify that writes are disabled when we is low.
 - Verify behavior immediately before and after the rising clock edge.
 - Verify reads and writes using boundary values, including zero, the most significant bit, and all bits set to one.
+
+
+
+## Instruction Decoder Specification — Version 0.1
+
+### Purpose
+
+The instruction decoder identifies supported RV64I integer register-register instructions and generates the control signals required by the datapath.
+
+### Supported Instructions
+
+The initial decoder supports the following R-type instructions:
+
+- ADD
+- SUB
+- SLL
+- SLT
+- SLTU
+- XOR
+- SRL
+- SRA
+- OR
+- AND
+
+All supported instructions use opcode `0110011`.
+
+### Inputs
+
+- `instr`: 32-bit instruction word.
+
+### Outputs
+
+- `rs1`: 5-bit source register address.
+- `rs2`: 5-bit second source register address.
+- `rd`: 5-bit destination register address.
+- `alu_op`: ALU operation selector using `core_pkg::alu_op_t`.
+- `reg_write`: register-file write enable.
+- `illegal_instr`: asserted when the instruction is not supported.
+
+### Behavioral Rules
+
+- Supported instructions are identified using opcode, funct3, and funct7.
+- For supported instructions, `reg_write` is asserted and `illegal_instr` is deasserted.
+- For unsupported encodings, `reg_write` is deasserted and `illegal_instr` is asserted.
+- For unsupported encodings, `alu_op` defaults to `core_pkg::ALU_ADD`; this default must not be interpreted as a valid operation when `illegal_instr` is asserted.
+- The decoder does not execute instructions or access the register file directly.
+- Immediate instructions, loads, stores, branches, jumps, CSR instructions, and compressed instructions are outside this initial scope.
+
+### Verification Requirements
+
+- Verify each of the ten supported instructions.
+- Verify extraction of `rd`, `rs1`, and `rs2`.
+- Verify that unsupported opcodes are marked illegal.
+- Verify that invalid funct3/funct7 combinations are marked illegal.
+- Verify that illegal instructions never assert `reg_write`.
