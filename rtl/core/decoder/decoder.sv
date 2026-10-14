@@ -8,6 +8,7 @@ module decoder (
 
     output core_pkg::alu_op_t alu_op,
     output logic              reg_write,
+    output logic              alu_src,
     output logic              illegal_instr
 );
 
@@ -23,10 +24,13 @@ module decoder (
     assign funct7 = instr[31:25];
 
     always_comb begin
-        alu_op       = core_pkg::ALU_ADD;
-        reg_write    = 1'b0;
+        // Safe defaults: unsupported instructions do not write registers.
+        alu_op        = core_pkg::ALU_ADD;
+        reg_write     = 1'b0;
+        alu_src       = 1'b0;
         illegal_instr = 1'b1;
 
+        // R-type integer register-register operations.
         if (opcode == 7'b0110011) begin
             unique case (funct3)
                 3'b000: begin
@@ -102,9 +106,18 @@ module decoder (
                 end
 
                 default: begin
-                    // Defaults above already mark the instruction illegal.
+                    // Safe defaults already indicate an illegal instruction.
                 end
             endcase
+
+        // I-type arithmetic: initially ADDI only.
+        end else if (opcode == 7'b0010011) begin
+            if (funct3 == 3'b000) begin
+                alu_op        = core_pkg::ALU_ADD;
+                reg_write     = 1'b1;
+                alu_src       = 1'b1;
+                illegal_instr = 1'b0;
+            end
         end
     end
 

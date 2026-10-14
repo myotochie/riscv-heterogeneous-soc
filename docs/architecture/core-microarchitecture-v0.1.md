@@ -685,3 +685,113 @@ All supported instructions use opcode `0110011`.
 - Verify that unsupported opcodes are marked illegal.
 - Verify that invalid funct3/funct7 combinations are marked illegal.
 - Verify that illegal instructions never assert `reg_write`.
+
+
+
+## Immediate Instructions Specification — Version 0.1
+
+### 1. Scope
+
+The initial immediate-instruction support is limited to `ADDI` (Add Immediate). Other immediate instructions are out of scope for this version.
+
+### 2. ADDI Instruction
+
+- Opcode: `0010011` (`0x13`)
+- `funct3`: `000`
+- Destination register: `rd = instr[11:7]`
+- Source register: `rs1 = instr[19:15]`
+- Immediate field: `instr[31:20]`, a signed 12-bit two's-complement integer
+- Operation: `x[rd] = x[rs1] + sign_extend(imm[11:0], 64)`
+- Arithmetic is performed modulo \(2^{64}\).
+- `x0` always reads as zero. Writes to `x0` must have no architectural effect.
+
+### 3. Decoder Control Signals
+
+For a valid `ADDI` instruction:
+
+- `alu_op = ALU_ADD`
+- `reg_write = 1`
+- `alu_src = 1`, selecting the immediate as ALU operand B
+- `illegal_instr = 0`
+
+For supported R-type instructions:
+
+- `alu_src = 0`, selecting register operand `rs2`
+
+For unsupported or invalid encodings:
+
+- `reg_write = 0`
+- `alu_src = 0`
+- `illegal_instr = 1`
+- `alu_op = ALU_ADD` as a deterministic default
+
+### 4. Immediate Generator
+
+A dedicated `imm_gen` module shall:
+
+- Accept the 32-bit instruction word.
+- Produce a 64-bit immediate output.
+- For the initial ADDI implementation, sign-extend `instr[31:20]` from 12 bits to 64 bits.
+- Interpret bit 11 of the immediate as the sign bit.
+- Produce `imm = 0x000000000000002A` for an immediate of +42.
+- Produce `imm = 0xFFFFFFFFFFFFFFFF` for an immediate of -1.
+- Produce `imm = 0xFFFFFFFFFFFFF800` for an immediate of -2048.
+- Produce `imm = 0x00000000000007FF` for an immediate of +2047.
+
+### 5. Verification Requirements
+
+The unit tests shall verify:
+
+1. ADDI decoding and control signals for a valid encoding.
+2. Immediate sign extension for +42, -1, -2048 and +2047.
+3. Rejection of unsupported immediate encodings, including an unsupported `funct3`.
+4. No regression in the ten supported R-type instructions.
+5. No register write enable for illegal instructions.
+
+
+
+
+
+## Minimal RV64 Datapath Specification — Version 0.1
+
+### 1. Purpose
+
+The minimal datapath integrates the existing decoder, immediate generator, register file and ALU. It executes one externally supplied instruction at a time. It is not yet a pipelined processor and does not include a program counter or instruction memory.
+
+### 2. Supported Instructions
+
+- Ten supported R-type integer instructions: ADD, SUB, SLL, SLT, SLTU, XOR, SRL, SRA, OR and AND.
+- ADDI with a signed 12-bit immediate.
+
+### 3. Datapath Behavior
+
+- The decoder extracts the register indices and generates control signals.
+- The register file provides two combinational read values.
+- The immediate generator provides a sign-extended 64-bit immediate.
+- A combinational multiplexer selects register operand rs2 or the immediate according to alu_src.
+- The ALU computes the result.
+- For a valid instruction with reg_write asserted, the result is written to rd at the rising clock edge.
+- Writes to x0 have no architectural effect.
+- Illegal instructions must not modify any architectural register.
+
+### 4. External Interface
+
+Inputs:
+
+- clk: clock.
+- instr[31:0]: instruction to execute.
+
+Outputs:
+
+- illegal_instr: indicates an unsupported or invalid instruction.
+- result[63:0]: current combinational ALU result.
+- rs1_value[63:0]: value read from register rs1.
+- rs2_value[63:0]: value read from register rs2.
+
+### 5. Verification Requirements
+
+- Execute ADDI x1, x0, 42; ADDI x2, x0, 99; ADD x3, x1, x2; verify x1=42, x2=99 and x3=141.
+- Verify SUB and at least one logical or shift operation through the integrated datapath.
+- Verify that writes occur only at the rising clock edge.
+- Verify that an illegal instruction does not modify architectural state.
+- Verify that writes to x0 have no architectural effect.

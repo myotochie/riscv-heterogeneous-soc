@@ -38,6 +38,22 @@ uint32_t encode_r_type(
          | opcode;
 }
 
+
+
+uint32_t encode_i_type(
+    int16_t imm,
+    uint8_t rs1,
+    uint8_t funct3,
+    uint8_t rd,
+    uint8_t opcode = 0x13
+) {
+    return (static_cast<uint32_t>(static_cast<uint16_t>(imm) & 0x0FFF) << 20)
+         | (static_cast<uint32_t>(rs1) << 15)
+         | (static_cast<uint32_t>(funct3) << 12)
+         | (static_cast<uint32_t>(rd) << 7)
+         | opcode;
+}
+
 void check_instruction(
     Vdecoder& dut,
     uint32_t instruction,
@@ -47,6 +63,7 @@ void check_instruction(
     AluOp expected_alu_op,
     bool expected_reg_write,
     bool expected_illegal,
+    bool expected_alu_src,
     const char* name
 ) {
     dut.instr = instruction;
@@ -60,6 +77,7 @@ void check_instruction(
         dut.rs2 == expected_rs2 &&
         dut.alu_op == expected_alu_op &&
         dut.reg_write == expected_reg_write &&
+        dut.alu_src == expected_alu_src &&
         dut.illegal_instr == expected_illegal;
 
     if (pass) {
@@ -72,6 +90,7 @@ void check_instruction(
                   << " rs2=" << static_cast<int>(dut.rs2)
                   << " alu_op=" << static_cast<int>(dut.alu_op)
                   << " reg_write=" << static_cast<int>(dut.reg_write)
+                  << " alu_src=" << static_cast<int>(dut.alu_src)
                   << " illegal=" << static_cast<int>(dut.illegal_instr)
                   << '\n';
     }
@@ -87,46 +106,66 @@ int main(int argc, char** argv) {
 
     // Ten supported RV64I R-type instructions.
     check_instruction(dut, encode_r_type(0x00, rs2, rs1, 0b000, rd),
-        rd, rs1, rs2, ALU_ADD, true, false, "ADD");
+        rd, rs1, rs2, ALU_ADD, true, false,false, "ADD");
 
     check_instruction(dut, encode_r_type(0x20, rs2, rs1, 0b000, rd),
-        rd, rs1, rs2, ALU_SUB, true, false, "SUB");
+        rd, rs1, rs2, ALU_SUB, true, false,false, "SUB");
 
     check_instruction(dut, encode_r_type(0x00, rs2, rs1, 0b001, rd),
-        rd, rs1, rs2, ALU_SLL, true, false, "SLL");
+        rd, rs1, rs2, ALU_SLL, true, false,false, "SLL");
 
     check_instruction(dut, encode_r_type(0x00, rs2, rs1, 0b010, rd),
-        rd, rs1, rs2, ALU_SLT, true, false, "SLT");
+        rd, rs1, rs2, ALU_SLT, true, false,false, "SLT");
 
     check_instruction(dut, encode_r_type(0x00, rs2, rs1, 0b011, rd),
-        rd, rs1, rs2, ALU_SLTU, true, false, "SLTU");
+        rd, rs1, rs2, ALU_SLTU, true, false,false, "SLTU");
 
     check_instruction(dut, encode_r_type(0x00, rs2, rs1, 0b100, rd),
-        rd, rs1, rs2, ALU_XOR, true, false, "XOR");
+        rd, rs1, rs2, ALU_XOR, true, false,false, "XOR");
 
     check_instruction(dut, encode_r_type(0x00, rs2, rs1, 0b101, rd),
-        rd, rs1, rs2, ALU_SRL, true, false, "SRL");
+        rd, rs1, rs2, ALU_SRL, true, false,false, "SRL");
 
     check_instruction(dut, encode_r_type(0x20, rs2, rs1, 0b101, rd),
-        rd, rs1, rs2, ALU_SRA, true, false, "SRA");
+        rd, rs1, rs2, ALU_SRA, true, false,false, "SRA");
 
     check_instruction(dut, encode_r_type(0x00, rs2, rs1, 0b110, rd),
-        rd, rs1, rs2, ALU_OR, true, false, "OR");
+        rd, rs1, rs2, ALU_OR, true, false,false, "OR");
 
     check_instruction(dut, encode_r_type(0x00, rs2, rs1, 0b111, rd),
-        rd, rs1, rs2, ALU_AND, true, false, "AND");
+        rd, rs1, rs2, ALU_AND, true, false,false, "AND");
 
     // Unsupported opcode.
-    check_instruction(dut, encode_r_type(0x00, rs2, rs1, 0b000, rd, 0x13),
-        rd, rs1, rs2, ALU_ADD, false, true, "unsupported opcode");
+    check_instruction(dut, encode_r_type(0x00, rs2, rs1, 0b000, rd, 0x7F),
+        rd, rs1, rs2, ALU_ADD, false, true,false, "unsupported opcode");
 
     // Invalid funct7 for ADD.
     check_instruction(dut, encode_r_type(0x01, rs2, rs1, 0b000, rd),
-        rd, rs1, rs2, ALU_ADD, false, true, "invalid ADD funct7");
+        rd, rs1, rs2, ALU_ADD, false, true,false, "invalid ADD funct7");
 
     // Invalid funct7 for AND.
     check_instruction(dut, encode_r_type(0x20, rs2, rs1, 0b111, rd),
-        rd, rs1, rs2, ALU_ADD, false, true, "invalid AND funct7");
+        rd, rs1, rs2, ALU_ADD, false, true,false, "invalid AND funct7");
+
+
+    // Valid ADDI instructions.
+    check_instruction(dut, encode_i_type(42, rs1, 0b000, rd),
+        rd, rs1, 10, ALU_ADD, true, false, true, "ADDI +42");
+
+    check_instruction(dut, encode_i_type(-1, rs1, 0b000, rd),
+        rd, rs1, 31, ALU_ADD, true, false, true, "ADDI -1");
+
+    check_instruction(dut, encode_i_type(-2048, rs1, 0b000, rd),
+        rd, rs1, 0, ALU_ADD, true, false, true, "ADDI -2048");
+
+    check_instruction(dut, encode_i_type(2047, rs1, 0b000, rd),
+        rd, rs1, 31, ALU_ADD, true, false, true, "ADDI +2047");
+
+    // Unsupported immediate funct3.
+    check_instruction(dut, encode_i_type(42, rs1, 0b001, rd),
+        rd, rs1, 10, ALU_ADD, false, true, false,
+        "unsupported immediate funct3");
+
 
     std::cout << "\nTests run: " << tests_run << '\n';
     std::cout << "Tests failed: " << tests_failed << '\n';
