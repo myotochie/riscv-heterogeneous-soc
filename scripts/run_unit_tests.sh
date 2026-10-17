@@ -88,6 +88,27 @@ run_test control_flow_unit \
     rtl/core/control/control_flow_unit.sv \
     verification/unit/control_flow_unit/tb_control_flow_unit.cpp
 
+run_test pipeline_if_id \
+    --top-module pipeline_if_id \
+    rtl/core/pipeline/pipeline_if_id.sv \
+    verification/unit/pipeline_if_id/tb_pipeline_if_id.cpp
+
+run_test pipeline_id_ex \
+    --top-module pipeline_id_ex \
+    rtl/core/core_pkg.sv \
+    rtl/core/pipeline/pipeline_id_ex.sv \
+    verification/unit/pipeline_id_ex/tb_pipeline_id_ex.cpp
+
+run_test pipeline_ex_mem \
+    --top-module pipeline_ex_mem \
+    rtl/core/pipeline/pipeline_ex_mem.sv \
+    verification/unit/pipeline_ex_mem/tb_pipeline_ex_mem.cpp
+
+run_test pipeline_mem_wb \
+    --top-module pipeline_mem_wb \
+    rtl/core/pipeline/pipeline_mem_wb.sv \
+    verification/unit/pipeline_mem_wb/tb_pipeline_mem_wb.cpp
+
 echo
 echo "======================================"
 echo " ALL TEST SUITES PASSED"

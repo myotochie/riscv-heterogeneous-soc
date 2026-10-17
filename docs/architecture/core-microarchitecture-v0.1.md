@@ -795,3 +795,37 @@ Outputs:
 - Verify that writes occur only at the rising clock edge.
 - Verify that an illegal instruction does not modify architectural state.
 - Verify that writes to x0 have no architectural effect.
+
+
+## Program Counter (PC) — Specification v0.1
+
+### Purpose
+
+The Program Counter stores the address of the instruction currently
+being executed or fetched.
+
+### Interface behavior
+
+- Width: 64 bits.
+- Clock: rising edge.
+- Reset: synchronous, active high.
+- Reset value: 0x0000000080000000.
+- Normal operation: PC advances by 4 bytes per cycle.
+- Redirect: when redirect is asserted, the PC loads redirect_target
+  on the next rising edge.
+- Priority: reset > redirect > sequential increment.
+
+### Design rationale
+
+The initial implementation assumes fixed-width 32-bit instructions.
+Compressed instructions and variable-length instruction sequencing
+will be addressed during instruction-fetch integration.
+
+### Verification requirements
+
+1. Reset loads the specified reset address.
+2. PC advances by 4 on each rising edge.
+3. A redirect loads the specified target.
+4. Redirect takes priority over sequential increment.
+5. Reset takes priority over redirect.
+6. PC remains stable when the clock does not have a rising edge.
