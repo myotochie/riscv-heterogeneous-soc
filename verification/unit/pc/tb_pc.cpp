@@ -8,13 +8,8 @@
 static int tests_run = 0;
 static int tests_failed = 0;
 
-void check(
-    Vpc& dut,
-    uint64_t expected,
-    const char* name
-) {
+void check(Vpc& dut, uint64_t expected, const char* name) {
     ++tests_run;
-
     const uint64_t actual = dut.pc_value;
 
     if (actual == expected) {
@@ -42,9 +37,10 @@ int main(int argc, char** argv) {
     dut.clk = 0;
     dut.reset = 1;
     dut.redirect = 0;
+    dut.stall = 0;
     dut.redirect_target = 0;
-    rising_edge(dut);
 
+    rising_edge(dut);
     check(dut, 0x80000000ULL, "Synchronous reset");
 
     dut.reset = 0;
@@ -74,10 +70,23 @@ int main(int argc, char** argv) {
     rising_edge(dut);
     check(dut, 0x80000004ULL, "Increment after reset");
 
-    // Verify that the PC does not change without a rising edge.
+    dut.stall = 1;
+    rising_edge(dut);
+    check(dut, 0x80000004ULL, "PC holds during stall");
+
+    dut.redirect = 1;
+    dut.redirect_target = 0x80003000ULL;
+    rising_edge(dut);
+    check(dut, 0x80003000ULL, "Redirect takes priority over stall");
+
+    dut.redirect = 0;
+    dut.stall = 0;
+    rising_edge(dut);
+    check(dut, 0x80003004ULL, "Increment resumes after stall");
+
     dut.clk = 0;
     dut.eval();
-    check(dut, 0x80000004ULL, "PC stable without rising edge");
+    check(dut, 0x80003004ULL, "PC stable without rising edge");
 
     std::cout << "\nTests run: " << tests_run
               << "\nTests failed: " << tests_failed << '\n';

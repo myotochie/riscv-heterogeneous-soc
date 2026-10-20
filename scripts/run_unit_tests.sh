@@ -109,6 +109,86 @@ run_test pipeline_mem_wb \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     verification/unit/pipeline_mem_wb/tb_pipeline_mem_wb.cpp
 
+run_test fetch_path \
+    --top-module fetch_path \
+    rtl/core/pc/pc.sv \
+    rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/pipeline/fetch_path.sv \
+    verification/integration/tb_fetch_path.cpp
+
+run_test decode_stage \
+    --top-module decode_stage \
+    rtl/core/core_pkg.sv \
+    rtl/core/decoder/decoder.sv \
+    rtl/core/imm_gen/imm_gen.sv \
+    rtl/core/regfile/regfile.sv \
+    rtl/core/decode/decode_stage.sv \
+    verification/unit/decode_stage/tb_decode_stage.cpp
+
+run_test fetch_decode_path \
+    --top-module fetch_decode_path \
+    rtl/core/core_pkg.sv \
+    rtl/core/pc/pc.sv \
+    rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/pipeline/fetch_path.sv \
+    rtl/core/decoder/decoder.sv \
+    rtl/core/imm_gen/imm_gen.sv \
+    rtl/core/regfile/regfile.sv \
+    rtl/core/decode/decode_stage.sv \
+    rtl/core/pipeline/pipeline_id_ex.sv \
+    rtl/core/pipeline/fetch_decode_path.sv \
+    verification/integration/tb_fetch_decode_path.cpp
+
+run_test execute_stage \
+    --top-module execute_stage \
+    rtl/core/core_pkg.sv \
+    rtl/core/alu/alu.sv \
+    rtl/core/execute/execute_stage.sv \
+    verification/unit/execute_stage/tb_execute_stage.cpp
+
+run_test fetch_decode_execute_path \
+    --top-module fetch_decode_execute_path \
+    rtl/core/core_pkg.sv \
+    rtl/core/pc/pc.sv \
+    rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/pipeline/fetch_path.sv \
+    rtl/core/decoder/decoder.sv \
+    rtl/core/imm_gen/imm_gen.sv \
+    rtl/core/regfile/regfile.sv \
+    rtl/core/decode/decode_stage.sv \
+    rtl/core/pipeline/pipeline_id_ex.sv \
+    rtl/core/pipeline/fetch_decode_path.sv \
+    rtl/core/alu/alu.sv \
+    rtl/core/execute/execute_stage.sv \
+    rtl/core/pipeline/pipeline_ex_mem.sv \
+    rtl/core/pipeline/fetch_decode_execute_path.sv \
+    verification/integration/tb_fetch_decode_execute_path.cpp
+
+run_test writeback_stage \
+    --top-module writeback_stage \
+    rtl/core/writeback/writeback_stage.sv \
+    verification/unit/writeback_stage/tb_writeback_stage.cpp
+
+run_test rv64_pipeline \
+    --top-module rv64_pipeline \
+    rtl/core/core_pkg.sv \
+    rtl/core/pc/pc.sv \
+    rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/pipeline/fetch_path.sv \
+    rtl/core/decoder/decoder.sv \
+    rtl/core/imm_gen/imm_gen.sv \
+    rtl/core/regfile/regfile.sv \
+    rtl/core/decode/decode_stage.sv \
+    rtl/core/pipeline/pipeline_id_ex.sv \
+    rtl/core/pipeline/fetch_decode_path.sv \
+    rtl/core/alu/alu.sv \
+    rtl/core/execute/execute_stage.sv \
+    rtl/core/pipeline/pipeline_ex_mem.sv \
+    rtl/core/pipeline/fetch_decode_execute_path.sv \
+    rtl/core/pipeline/pipeline_mem_wb.sv \
+    rtl/core/writeback/writeback_stage.sv \
+    rtl/core/pipeline/rv64_pipeline.sv \
+    verification/integration/tb_rv64_regfile.cpp
 echo
 echo "======================================"
 echo " ALL TEST SUITES PASSED"

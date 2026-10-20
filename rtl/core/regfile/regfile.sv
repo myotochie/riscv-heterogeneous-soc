@@ -11,7 +11,15 @@ module regfile (
 );
 
     logic [63:0] regs [1:31];
+`ifdef VERILATOR
+    wire [63:0] debug_x1 /* verilator public_flat_rd */;
+    wire [63:0] debug_x2 /* verilator public_flat_rd */;
+    wire [63:0] debug_x3 /* verilator public_flat_rd */;
 
+    assign debug_x1 = regs[1];
+    assign debug_x2 = regs[2];
+    assign debug_x3 = regs[3];
+`endif
     // Combinational read port 1.
     always_comb begin
         if (rs1 == 5'd0)

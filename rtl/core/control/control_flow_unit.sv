@@ -62,6 +62,7 @@ module control_flow_unit (
         .reset           (reset),
         .redirect        (redirect),
         .redirect_target (redirect_target),
+	.stall           (1'b0),
         .pc_value        (pc_value)
     );
 
