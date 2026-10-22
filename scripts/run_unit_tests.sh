@@ -257,6 +257,18 @@ verilator --cc --exe --build --sv \
 echo ">>> rv64_forwarding_priority: PASS"
 
 echo
+echo ">>> Building and testing: hazard_detection_unit"
+
+verilator --cc --exe --build --sv \
+    --top-module hazard_detection_unit \
+    --Mdir obj_dir/hazard_detection \
+    rtl/core/hazard/hazard_detection_unit.sv \
+    "$(pwd)/verification/unit/hazard_detection_unit/tb_hazard_detection_unit.cpp"
+
+./obj_dir/hazard_detection/Vhazard_detection_unit
+echo ">>> hazard_detection_unit: PASS"
+
+echo
 echo "======================================"
 echo " ALL TEST SUITES PASSED"
 echo "======================================"
