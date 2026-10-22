@@ -62,6 +62,9 @@ int main(int argc, char** argv) {
     dut.wb_we = 0;
     dut.wb_rd = 0;
     dut.wb_data = 0;
+    dut.mem_wb_valid = 0;
+    dut.mem_wb_reg_write = 0;
+    dut.mem_wb_rd_idx = 0;
     dut.eval();
 
     tick(dut);

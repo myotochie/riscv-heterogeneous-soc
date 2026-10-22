@@ -1,4 +1,6 @@
-module fetch_decode_path (
+module fetch_decode_path #(
+    parameter bit RAW_TEST_PROGRAM = 1'b0
+) (
     input  logic        clk,
     input  logic        reset,
     input  logic        stall,
@@ -42,7 +44,9 @@ module fetch_decode_path (
     logic dec_illegal_instr;
     logic dec_valid;
 
-    fetch_path u_fetch (
+    fetch_path #(
+        .RAW_TEST_PROGRAM(RAW_TEST_PROGRAM)
+    ) u_fetch (
         .clk         (clk),
         .reset       (reset),
         .stall       (stall),

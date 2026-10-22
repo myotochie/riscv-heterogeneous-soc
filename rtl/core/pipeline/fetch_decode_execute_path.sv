@@ -1,4 +1,6 @@
-module fetch_decode_execute_path (
+module fetch_decode_execute_path #(
+    parameter bit RAW_TEST_PROGRAM = 1'b0
+) (
     input  logic        clk,
     input  logic        reset,
     input  logic        stall,
@@ -7,6 +9,11 @@ module fetch_decode_execute_path (
     input  logic        wb_we,
     input  logic [4:0]  wb_rd,
     input  logic [63:0] wb_data,
+
+    // Informations MEM/WB pour le forwarding
+    input  logic        mem_wb_valid,
+    input  logic        mem_wb_reg_write,
+    input  logic [4:0]  mem_wb_rd_idx,
 
     output logic [63:0] pc_value,
     output logic [63:0] ex_mem_pc,
@@ -53,7 +60,30 @@ module fetch_decode_execute_path (
     logic unused_ex_mem_write;
     logic unused_ex_mem_to_reg;
 
-    fetch_decode_path u_fetch_decode (
+
+    // Forwarding control
+    logic [1:0] forward_a;
+    logic [1:0] forward_b;
+
+    forwarding_unit u_forwarding_unit (
+        .rs1_idx_ex       (id_ex_rs1_idx),
+        .rs2_idx_ex       (id_ex_rs2_idx),
+
+        .rd_idx_ex_mem    (ex_mem_rd_idx),
+        .reg_write_ex_mem (ex_mem_reg_write),
+        .valid_ex_mem     (ex_mem_valid),
+
+        .rd_idx_mem_wb    (mem_wb_rd_idx),
+        .reg_write_mem_wb (mem_wb_reg_write),
+        .valid_mem_wb     (mem_wb_valid),
+
+        .forward_a        (forward_a),
+        .forward_b        (forward_b)
+    );
+
+    fetch_decode_path #(
+        .RAW_TEST_PROGRAM(RAW_TEST_PROGRAM)
+    ) u_fetch_decode (
         .clk                 (clk),
         .reset               (reset),
         .stall               (stall),
@@ -80,13 +110,19 @@ module fetch_decode_execute_path (
         .id_ex_valid        (id_ex_valid)
     );
 
-    execute_stage u_execute (
+    execute_stage #(
+        .ENABLE_FORWARDING(1'b1)
+    ) u_execute (
         .pc_in             (id_ex_pc),
         .instr_in          (id_ex_instr),
         .rs1_value_in     (id_ex_rs1_value),
         .rs2_value_in     (id_ex_rs2_value),
         .immediate_in      (id_ex_immediate),
         .rd_idx_in         (id_ex_rd_idx),
+        .forward_a_in      (forward_a),
+        .forward_b_in      (forward_b),
+        .ex_mem_forward_data_in (ex_mem_alu_result),
+        .mem_wb_forward_data_in (wb_data),
         .alu_op_in         (id_ex_alu_op),
         .alu_src_in        (id_ex_alu_src),
         .reg_write_in      (id_ex_reg_write),

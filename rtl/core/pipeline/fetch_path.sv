@@ -1,4 +1,6 @@
-module fetch_path (
+module fetch_path #(
+    parameter bit RAW_TEST_PROGRAM = 1'b0
+) (
     input  logic        clk,
     input  logic        reset,
     input  logic        stall,
@@ -19,10 +21,14 @@ module fetch_path (
                 instr_mem_data = 32'h00500093; // ADDI x1, x0, 5
 
             64'h0000000080000004:
-                instr_mem_data = 32'h00700113; // ADDI x2, x0, 7
+                instr_mem_data = RAW_TEST_PROGRAM
+                    ? 32'h00708113  // ADDI x2, x1, 7
+                    : 32'h00700113; // ADDI x2, x0, 7
 
             64'h0000000080000008:
-                instr_mem_data = 32'h00900193; // ADDI x3, x0, 9
+                instr_mem_data = RAW_TEST_PROGRAM
+                    ? 32'h001101B3  // ADD x3, x2, x1
+                    : 32'h00900193; // ADDI x3, x0, 9
 
             default:
                 instr_mem_data = 32'h00000013; // NOP

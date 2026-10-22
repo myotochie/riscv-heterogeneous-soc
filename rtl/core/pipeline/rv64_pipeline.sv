@@ -1,4 +1,6 @@
-module rv64_pipeline (
+module rv64_pipeline #(
+    parameter bit RAW_TEST_PROGRAM = 1'b0
+) (
     input  logic        clk,
     input  logic        reset,
     input  logic        stall,
@@ -34,7 +36,9 @@ module rv64_pipeline (
 
     logic        wb_we_internal;
 
-    fetch_decode_execute_path u_frontend (
+    fetch_decode_execute_path #(
+        .RAW_TEST_PROGRAM(RAW_TEST_PROGRAM)
+    ) u_frontend (
         .clk                 (clk),
         .reset               (reset),
         .stall               (stall),
@@ -43,6 +47,10 @@ module rv64_pipeline (
         .wb_we               (wb_we),
         .wb_rd               (wb_rd),
         .wb_data             (wb_data),
+
+        .mem_wb_valid        (mem_wb_valid),
+        .mem_wb_reg_write    (mem_wb_reg_write),
+        .mem_wb_rd_idx       (mem_wb_rd_idx),
 
         .pc_value            (pc_value),
         .ex_mem_pc           (ex_mem_pc),

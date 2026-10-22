@@ -143,6 +143,8 @@ run_test execute_stage \
     --top-module execute_stage \
     rtl/core/core_pkg.sv \
     rtl/core/alu/alu.sv \
+    rtl/core/hazard/forwarding_unit.sv \
+    rtl/core/hazard/forwarding_mux.sv \
     rtl/core/execute/execute_stage.sv \
     verification/unit/execute_stage/tb_execute_stage.cpp
 
@@ -159,6 +161,8 @@ run_test fetch_decode_execute_path \
     rtl/core/pipeline/pipeline_id_ex.sv \
     rtl/core/pipeline/fetch_decode_path.sv \
     rtl/core/alu/alu.sv \
+    rtl/core/hazard/forwarding_unit.sv \
+    rtl/core/hazard/forwarding_mux.sv \
     rtl/core/execute/execute_stage.sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
@@ -182,6 +186,8 @@ run_test rv64_pipeline \
     rtl/core/pipeline/pipeline_id_ex.sv \
     rtl/core/pipeline/fetch_decode_path.sv \
     rtl/core/alu/alu.sv \
+    rtl/core/hazard/forwarding_unit.sv \
+    rtl/core/hazard/forwarding_mux.sv \
     rtl/core/execute/execute_stage.sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
@@ -189,6 +195,36 @@ run_test rv64_pipeline \
     rtl/core/writeback/writeback_stage.sv \
     rtl/core/pipeline/rv64_pipeline.sv \
     verification/integration/tb_rv64_regfile.cpp
+echo
+echo ">>> Building and testing: rv64_raw_forwarding"
+verilator --cc --exe --build --sv \
+    --top-module rv64_pipeline \
+    "-GRAW_TEST_PROGRAM=1'b1" \
+    --Mdir obj_dir/rv64_raw \
+    rtl/core/core_pkg.sv \
+    rtl/core/pc/pc.sv \
+    rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/pipeline/fetch_path.sv \
+    rtl/core/decoder/decoder.sv \
+    rtl/core/imm_gen/imm_gen.sv \
+    rtl/core/regfile/regfile.sv \
+    rtl/core/decode/decode_stage.sv \
+    rtl/core/pipeline/pipeline_id_ex.sv \
+    rtl/core/pipeline/fetch_decode_path.sv \
+    rtl/core/alu/alu.sv \
+    rtl/core/hazard/forwarding_unit.sv \
+    rtl/core/hazard/forwarding_mux.sv \
+    rtl/core/execute/execute_stage.sv \
+    rtl/core/pipeline/pipeline_ex_mem.sv \
+    rtl/core/pipeline/fetch_decode_execute_path.sv \
+    rtl/core/pipeline/pipeline_mem_wb.sv \
+    rtl/core/writeback/writeback_stage.sv \
+    rtl/core/pipeline/rv64_pipeline.sv \
+    "$(pwd)/verification/integration/tb_rv64_raw_forwarding.cpp"
+
+./obj_dir/rv64_raw/Vrv64_pipeline
+echo ">>> rv64_raw_forwarding: PASS"
+
 echo
 echo "======================================"
 echo " ALL TEST SUITES PASSED"
