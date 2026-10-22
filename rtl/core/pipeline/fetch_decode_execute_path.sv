@@ -1,5 +1,6 @@
 module fetch_decode_execute_path #(
-    parameter bit RAW_TEST_PROGRAM = 1'b0
+    parameter bit RAW_TEST_PROGRAM = 1'b0,
+    parameter int unsigned PROGRAM_ID = 0
 ) (
     input  logic        clk,
     input  logic        reset,
@@ -82,7 +83,8 @@ module fetch_decode_execute_path #(
     );
 
     fetch_decode_path #(
-        .RAW_TEST_PROGRAM(RAW_TEST_PROGRAM)
+        .RAW_TEST_PROGRAM(RAW_TEST_PROGRAM),
+        .PROGRAM_ID(PROGRAM_ID)
     ) u_fetch_decode (
         .clk                 (clk),
         .reset               (reset),

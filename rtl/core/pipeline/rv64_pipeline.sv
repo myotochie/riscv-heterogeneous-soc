@@ -1,5 +1,6 @@
 module rv64_pipeline #(
-    parameter bit RAW_TEST_PROGRAM = 1'b0
+    parameter bit RAW_TEST_PROGRAM = 1'b0,
+    parameter int unsigned PROGRAM_ID = 0
 ) (
     input  logic        clk,
     input  logic        reset,
@@ -37,7 +38,8 @@ module rv64_pipeline #(
     logic        wb_we_internal;
 
     fetch_decode_execute_path #(
-        .RAW_TEST_PROGRAM(RAW_TEST_PROGRAM)
+        .RAW_TEST_PROGRAM(RAW_TEST_PROGRAM),
+        .PROGRAM_ID(PROGRAM_ID)
     ) u_frontend (
         .clk                 (clk),
         .reset               (reset),

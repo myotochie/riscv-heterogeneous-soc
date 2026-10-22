@@ -1,5 +1,6 @@
 module fetch_path #(
-    parameter bit RAW_TEST_PROGRAM = 1'b0
+    parameter bit RAW_TEST_PROGRAM = 1'b0,
+    parameter int unsigned PROGRAM_ID = 0
 ) (
     input  logic        clk,
     input  logic        reset,
@@ -15,23 +16,43 @@ module fetch_path #(
     logic [31:0] instr_mem_data;
 
     // Instruction memory model for integration testing.
+    // PROGRAM_ID=0 preserves the legacy RAW_TEST_PROGRAM selection.
+    localparam int unsigned SELECTED_PROGRAM =
+        (PROGRAM_ID != 0) ? PROGRAM_ID : (RAW_TEST_PROGRAM ? 1 : 0);
+
     always_comb begin
-        case (pc_value)
-            64'h0000000080000000:
-                instr_mem_data = 32'h00500093; // ADDI x1, x0, 5
+        instr_mem_data = 32'h00000013; // NOP
 
-            64'h0000000080000004:
-                instr_mem_data = RAW_TEST_PROGRAM
-                    ? 32'h00708113  // ADDI x2, x1, 7
-                    : 32'h00700113; // ADDI x2, x0, 7
+        case (SELECTED_PROGRAM)
+            0: begin
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h00500093;
+                    64'h80000004: instr_mem_data = 32'h00700113;
+                    64'h80000008: instr_mem_data = 32'h00900193;
+                    default: ;
+                endcase
+            end
 
-            64'h0000000080000008:
-                instr_mem_data = RAW_TEST_PROGRAM
-                    ? 32'h001101B3  // ADD x3, x2, x1
-                    : 32'h00900193; // ADDI x3, x0, 9
+            1: begin
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h00500093;
+                    64'h80000004: instr_mem_data = 32'h00708113;
+                    64'h80000008: instr_mem_data = 32'h001101B3;
+                    default: ;
+                endcase
+            end
 
-            default:
-                instr_mem_data = 32'h00000013; // NOP
+            2: begin
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h00500093; // ADDI x1,x0,5
+                    64'h80000004: instr_mem_data = 32'h00308093; // ADDI x1,x1,3
+                    64'h80000008: instr_mem_data = 32'h00408093; // ADDI x1,x1,4
+                    64'h8000000C: instr_mem_data = 32'h00108133; // ADD x2,x1,x1
+                    default: ;
+                endcase
+            end
+
+            default: ;
         endcase
     end
 
