@@ -32,6 +32,11 @@ int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
     Vfetch_decode_path dut{};
 
+    // Default: no local pipeline hazard.
+    dut.hazard_stall_pc = 0;
+    dut.hazard_stall_if_id = 0;
+    dut.hazard_flush_id_ex = 0;
+
     constexpr uint64_t BASE = UINT64_C(0x80000000);
 
     dut.clk = 0;

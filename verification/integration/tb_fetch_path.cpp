@@ -61,7 +61,8 @@ int main(int argc, char** argv) {
 
     dut.clk = 0;
     dut.reset = 1;
-    dut.stall = 0;
+    dut.stall_pc = 0;
+    dut.stall_if_id = 0;
     dut.flush = 0;
 
     tick(dut);
@@ -96,7 +97,8 @@ int main(int argc, char** argv) {
 
     // Stall IF/ID: PC still advances in this initial wrapper.
     // This test documents the current behavior, not the final stall design.
-    dut.stall = 1;
+    dut.stall_pc = 1;
+    dut.stall_if_id = 1;
     tick(dut);
 
     check(
@@ -105,7 +107,8 @@ int main(int argc, char** argv) {
     );
 
     // Flush invalidates IF/ID. PC continues sequentially.
-    dut.stall = 0;
+    dut.stall_pc = 0;
+    dut.stall_if_id = 0;
     dut.flush = 1;
     tick(dut);
 

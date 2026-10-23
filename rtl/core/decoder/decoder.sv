@@ -8,8 +8,11 @@ module decoder (
 
     output core_pkg::alu_op_t alu_op,
     output logic              reg_write,
+    output logic              mem_read,
     output logic              alu_src,
-    output logic              illegal_instr
+    output logic              illegal_instr,
+    output logic              uses_rs1,
+    output logic              uses_rs2
 );
 
     logic [6:0] opcode;
@@ -27,8 +30,11 @@ module decoder (
         // Safe defaults: unsupported instructions do not write registers.
         alu_op        = core_pkg::ALU_ADD;
         reg_write     = 1'b0;
+        mem_read      = 1'b0;
         alu_src       = 1'b0;
         illegal_instr = 1'b1;
+        uses_rs1     = 1'b0;
+        uses_rs2     = 1'b0;
 
         // R-type integer register-register operations.
         if (opcode == 7'b0110011) begin
@@ -118,6 +124,20 @@ module decoder (
                 alu_src       = 1'b1;
                 illegal_instr = 1'b0;
             end
+        end
+        // RV64I LD: 64-bit signed-offset load.
+        // The memory datapath is not implemented yet.
+        if (opcode == 7'b0000011 && funct3 == 3'b011) begin
+            alu_op        = core_pkg::ALU_ADD;
+            reg_write     = 1'b1;
+            mem_read      = 1'b1;
+            alu_src       = 1'b1;
+            illegal_instr = 1'b0;
+        end
+
+        if (!illegal_instr) begin
+            uses_rs1 = 1'b1;
+            uses_rs2 = (opcode == 7'b0110011);
         end
     end
 

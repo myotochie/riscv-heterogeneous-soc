@@ -96,6 +96,37 @@ void check_instruction(
     }
 }
 
+
+void check_control_signals(
+    Vdecoder& dut,
+    uint32_t instruction,
+    bool expected_mem_read,
+    bool expected_uses_rs1,
+    bool expected_uses_rs2,
+    const char* name
+) {
+    dut.instr = instruction;
+    dut.eval();
+
+    ++tests_run;
+
+    const bool pass =
+        dut.mem_read == expected_mem_read &&
+        dut.uses_rs1 == expected_uses_rs1 &&
+        dut.uses_rs2 == expected_uses_rs2;
+
+    if (pass) {
+        std::cout << "[PASS] " << name << '\n';
+    } else {
+        ++tests_failed;
+        std::cout << "[FAIL] " << name
+                  << " | mem_read=" << static_cast<int>(dut.mem_read)
+                  << " uses_rs1=" << static_cast<int>(dut.uses_rs1)
+                  << " uses_rs2=" << static_cast<int>(dut.uses_rs2)
+                  << '\n';
+    }
+}
+
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
     Vdecoder dut{};
@@ -166,6 +197,41 @@ int main(int argc, char** argv) {
         rd, rs1, 10, ALU_ADD, false, true, false,
         "unsupported immediate funct3");
 
+
+
+    // RV64I LD: 64-bit load.
+    check_instruction(dut, encode_i_type(16, rs1, 0b011, rd, 0x03),
+        rd, rs1, 16, ALU_ADD, true, false, true, "LD +16");
+
+    check_control_signals(dut, encode_i_type(16, rs1, 0b011, rd, 0x03),
+        true, true, false, "LD control signals");
+
+    check_instruction(dut, encode_i_type(-8, rs1, 0b011, rd, 0x03),
+        rd, rs1, 24, ALU_ADD, true, false, true, "LD -8");
+
+    check_control_signals(dut, encode_i_type(-8, rs1, 0b011, rd, 0x03),
+        true, true, false, "LD negative offset controls");
+
+    // LW is not implemented yet.
+    check_instruction(dut, encode_i_type(16, rs1, 0b010, rd, 0x03),
+        rd, rs1, 16, ALU_ADD, false, true, false,
+        "unsupported LW");
+
+    check_control_signals(dut, encode_i_type(16, rs1, 0b010, rd, 0x03),
+        false, false, false, "unsupported LW controls");
+
+    // Arithmetic instructions must not request a memory read.
+    check_control_signals(dut, encode_i_type(42, rs1, 0b000, rd),
+        false, true, false, "ADDI controls");
+
+    check_control_signals(dut,
+        encode_r_type(0x00, rs2, rs1, 0b000, rd),
+        false, true, true, "ADD controls");
+
+    // Illegal instruction must not consume register operands.
+    check_control_signals(dut,
+        encode_r_type(0x01, rs2, rs1, 0b000, rd),
+        false, false, false, "illegal instruction controls");
 
     std::cout << "\nTests run: " << tests_run << '\n';
     std::cout << "Tests failed: " << tests_failed << '\n';

@@ -23,12 +23,15 @@ module rv64_datapath (
 
     // Instruction decoding and control generation.
     decoder u_decoder (
+        .uses_rs1(),
+        .uses_rs2(),
         .instr        (instr),
         .rs1          (rs1),
         .rs2          (rs2),
         .rd           (rd),
         .alu_op       (alu_op),
         .reg_write    (reg_write),
+        .mem_read     (),
         .alu_src      (alu_src),
         .illegal_instr(illegal_instr)
     );

@@ -4,7 +4,8 @@ module fetch_path #(
 ) (
     input  logic        clk,
     input  logic        reset,
-    input  logic        stall,
+    input  logic        stall_pc,
+    input  logic        stall_if_id,
     input  logic        flush,
 
     output logic [63:0] pc_value,
@@ -52,6 +53,16 @@ module fetch_path #(
                 endcase
             end
 
+            3: begin
+                // Load-use hazard integration program.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h0000B283; // LD x5,0(x1)
+                    64'h80000004: instr_mem_data = 32'h00228333; // ADD x6,x5,x2
+                    64'h80000008: instr_mem_data = 32'h00900393; // ADDI x7,x0,9
+                    default: ;
+                endcase
+            end
+
             default: ;
         endcase
     end
@@ -60,7 +71,7 @@ module fetch_path #(
 pc u_pc (
     .clk             (clk),
     .reset           (reset),
-    .stall            (stall),
+    .stall            (stall_pc),
     .redirect        (1'b0),
     .redirect_target (64'b0),
     .pc_value        (pc_value)
@@ -70,7 +81,7 @@ pc u_pc (
         .clk       (clk),
         .reset     (reset),
         .flush     (flush),
-        .stall     (stall),
+        .stall     (stall_if_id),
 
         .pc_in     (pc_value),
         .instr_in  (instr_mem_data),

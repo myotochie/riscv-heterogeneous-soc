@@ -165,6 +165,7 @@ run_test fetch_decode_execute_path \
     rtl/core/hazard/forwarding_mux.sv \
     rtl/core/execute/execute_stage.sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
+    rtl/core/hazard/hazard_detection_unit.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     verification/integration/tb_fetch_decode_execute_path.cpp
 
@@ -190,6 +191,7 @@ run_test rv64_pipeline \
     rtl/core/hazard/forwarding_mux.sv \
     rtl/core/execute/execute_stage.sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
+    rtl/core/hazard/hazard_detection_unit.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     rtl/core/writeback/writeback_stage.sv \
@@ -216,6 +218,7 @@ verilator --cc --exe --build --sv \
     rtl/core/hazard/forwarding_mux.sv \
     rtl/core/execute/execute_stage.sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
+    rtl/core/hazard/hazard_detection_unit.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     rtl/core/writeback/writeback_stage.sv \
@@ -247,6 +250,7 @@ verilator --cc --exe --build --sv \
     rtl/core/hazard/forwarding_mux.sv \
     rtl/core/execute/execute_stage.sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
+    rtl/core/hazard/hazard_detection_unit.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     rtl/core/writeback/writeback_stage.sv \
@@ -270,5 +274,57 @@ echo ">>> hazard_detection_unit: PASS"
 
 echo
 echo "======================================"
+
+echo
+echo ">>> Building and testing: fetch_decode_local_hazard"
+
+verilator --cc --exe --build --sv \
+    --top-module fetch_decode_path \
+    --Mdir obj_dir/local_hazard \
+    rtl/core/core_pkg.sv \
+    rtl/core/pc/pc.sv \
+    rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/pipeline/fetch_path.sv \
+    rtl/core/decoder/decoder.sv \
+    rtl/core/imm_gen/imm_gen.sv \
+    rtl/core/regfile/regfile.sv \
+    rtl/core/decode/decode_stage.sv \
+    rtl/core/pipeline/pipeline_id_ex.sv \
+    rtl/core/pipeline/fetch_decode_path.sv \
+    "$(pwd)/verification/integration/tb_fetch_decode_local_hazard.cpp"
+
+./obj_dir/local_hazard/Vfetch_decode_path
+
+echo ">>> fetch_decode_local_hazard: PASS"
+
+echo ">>> load_use_hazard"
+
+verilator --cc --exe --build --sv \
+    --top-module fetch_decode_execute_path \
+    -GPROGRAM_ID=3 \
+    --Mdir obj_dir/load_use_hazard \
+    rtl/core/core_pkg.sv \
+    rtl/core/pc/pc.sv \
+    rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/pipeline/fetch_path.sv \
+    rtl/core/decoder/decoder.sv \
+    rtl/core/imm_gen/imm_gen.sv \
+    rtl/core/regfile/regfile.sv \
+    rtl/core/decode/decode_stage.sv \
+    rtl/core/pipeline/pipeline_id_ex.sv \
+    rtl/core/pipeline/fetch_decode_path.sv \
+    rtl/core/alu/alu.sv \
+    rtl/core/hazard/forwarding_unit.sv \
+    rtl/core/hazard/forwarding_mux.sv \
+    rtl/core/execute/execute_stage.sv \
+    rtl/core/pipeline/pipeline_ex_mem.sv \
+    rtl/core/hazard/hazard_detection_unit.sv \
+    rtl/core/pipeline/fetch_decode_execute_path.sv \
+    "$(pwd)/verification/integration/tb_load_use_hazard.cpp"
+
+./obj_dir/load_use_hazard/Vfetch_decode_execute_path
+
+echo ">>> load_use_hazard: PASS"
+
 echo " ALL TEST SUITES PASSED"
 echo "======================================"

@@ -30,6 +30,11 @@ module fetch_decode_execute_path #(
     logic [31:0] if_id_instr;
     logic        if_id_valid;
 
+    // Source usage information from the ID stage.
+    // Reserved for the load-use hazard detection unit.
+    logic        dec_uses_rs1;
+    logic        dec_uses_rs2;
+
     logic [63:0] id_ex_pc;
     logic [31:0] id_ex_instr;
     logic [63:0] id_ex_rs1_value;
@@ -62,6 +67,28 @@ module fetch_decode_execute_path #(
     logic unused_ex_mem_to_reg;
 
 
+    // Local load-use hazard controls.
+    logic hazard_stall_pc;
+    logic hazard_stall_if_id;
+    logic hazard_flush_id_ex;
+
+    // Registered memory-read control from the EX stage.
+    logic id_ex_mem_read;
+
+    hazard_detection_unit u_hazard_detection (
+        .rs1_idx_id    (if_id_instr[19:15]),
+        .rs2_idx_id    (if_id_instr[24:20]),
+        .uses_rs1_id   (dec_uses_rs1),
+        .uses_rs2_id   (dec_uses_rs2),
+        .valid_id      (if_id_valid),
+        .rd_idx_ex     (id_ex_rd_idx),
+        .mem_read_ex   (id_ex_mem_read),
+        .valid_ex      (id_ex_valid),
+        .stall_pc      (hazard_stall_pc),
+        .stall_if_id   (hazard_stall_if_id),
+        .flush_id_ex   (hazard_flush_id_ex)
+    );
+
     // Forwarding control
     logic [1:0] forward_a;
     logic [1:0] forward_b;
@@ -90,6 +117,9 @@ module fetch_decode_execute_path #(
         .reset               (reset),
         .stall               (stall),
         .flush               (flush),
+        .hazard_stall_pc     (hazard_stall_pc),
+        .hazard_stall_if_id  (hazard_stall_if_id),
+        .hazard_flush_id_ex  (hazard_flush_id_ex),
         .wb_we               (wb_we),
         .wb_rd               (wb_rd),
         .wb_data             (wb_data),
@@ -107,9 +137,12 @@ module fetch_decode_execute_path #(
         .id_ex_rd_idx       (id_ex_rd_idx),
         .id_ex_alu_op       (id_ex_alu_op),
         .id_ex_reg_write    (id_ex_reg_write),
+        .id_ex_mem_read   (id_ex_mem_read),
         .id_ex_alu_src      (id_ex_alu_src),
         .id_ex_illegal_instr(id_ex_illegal_instr),
-        .id_ex_valid        (id_ex_valid)
+        .id_ex_valid        (id_ex_valid),
+        .dec_uses_rs1       (dec_uses_rs1),
+        .dec_uses_rs2       (dec_uses_rs2)
     );
 
     execute_stage #(

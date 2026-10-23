@@ -35,6 +35,7 @@ static void set_inputs(Vpipeline_id_ex& dut) {
 
     dut.alu_op_in = 1; // ALU_SUB
     dut.reg_write_in = 1;
+    dut.mem_read_in = 1;
     dut.alu_src_in = 1;
     dut.illegal_instr_in = 0;
     dut.valid_in = 1;
@@ -43,6 +44,7 @@ static void set_inputs(Vpipeline_id_ex& dut) {
 static void check_cleared(Vpipeline_id_ex& dut, const char* message) {
     check(dut.valid_out == 0, message);
     check(dut.reg_write_out == 0, "reg_write cleared");
+    check(dut.mem_read_out == 0, "mem_read cleared");
     check(dut.alu_src_out == 0, "alu_src cleared");
     check(dut.illegal_instr_out == 0, "illegal_instr cleared");
     check(dut.pc_out == 0, "PC cleared");
@@ -82,6 +84,7 @@ int main() {
     check(dut.rd_idx_out == 3, "rd index captured");
     check(dut.alu_op_out == 1, "ALU_SUB captured");
     check(dut.reg_write_out == 1, "reg_write captured");
+    check(dut.mem_read_out == 1, "mem_read captured");
     check(dut.alu_src_out == 1, "alu_src captured");
     check(dut.illegal_instr_out == 0, "illegal flag captured");
     check(dut.valid_out == 1, "valid captured");
@@ -98,6 +101,7 @@ int main() {
     dut.rd_idx_in = 12;
     dut.alu_op_in = 0;
     dut.reg_write_in = 0;
+    dut.mem_read_in = 0;
     dut.alu_src_in = 0;
     dut.illegal_instr_in = 1;
     dut.valid_in = 0;
@@ -113,6 +117,7 @@ int main() {
     check(dut.rd_idx_out == 3, "stall holds rd index");
     check(dut.alu_op_out == 1, "stall holds ALU operation");
     check(dut.reg_write_out == 1, "stall holds reg_write");
+    check(dut.mem_read_out == 1, "stall holds mem_read");
     check(dut.alu_src_out == 1, "stall holds alu_src");
     check(dut.illegal_instr_out == 0, "stall holds illegal flag");
     check(dut.valid_out == 1, "stall holds valid");
@@ -142,6 +147,7 @@ int main() {
 
     check(dut.valid_out == 0, "invalid input remains invalid");
     check(dut.reg_write_out == 0, "invalid input disables reg_write");
+    check(dut.mem_read_out == 0, "invalid input disables mem_read");
     check(dut.illegal_instr_out == 0,
           "invalid input disables illegal flag");
     check(dut.instr_out == 0x002081B3,

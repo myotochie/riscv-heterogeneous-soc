@@ -22,9 +22,12 @@ module decode_stage (
     output logic [4:0]            rd_idx_out,
     output core_pkg::alu_op_t     alu_op_out,
     output logic                  reg_write_out,
+    output logic                  mem_read_out,
     output logic                  alu_src_out,
     output logic                  illegal_instr_out,
-    output logic                  valid_out
+    output logic                  valid_out,
+    output logic                  uses_rs1_out,
+    output logic                  uses_rs2_out
 );
 
     logic [4:0]       rs1_idx;
@@ -32,8 +35,11 @@ module decode_stage (
     logic [4:0]       rd_idx;
     core_pkg::alu_op_t alu_op;
     logic             decoded_reg_write;
+    logic             decoded_mem_read;
     logic             alu_src;
     logic             decoded_illegal;
+    logic             decoded_uses_rs1;
+    logic             decoded_uses_rs2;
     logic [63:0]      immediate;
     logic [63:0]      rs1_value;
     logic [63:0]      rs2_value;
@@ -46,8 +52,11 @@ module decode_stage (
         .rd           (rd_idx),
         .alu_op       (alu_op),
         .reg_write    (decoded_reg_write),
+        .mem_read     (decoded_mem_read),
         .alu_src      (alu_src),
-        .illegal_instr(decoded_illegal)
+        .illegal_instr(decoded_illegal),
+        .uses_rs1     (decoded_uses_rs1),
+        .uses_rs2     (decoded_uses_rs2)
     );
 
     // 2. Génération de l'immédiat
@@ -82,8 +91,12 @@ module decode_stage (
         alu_src_out       = valid_in && alu_src;
         reg_write_out     = valid_in && decoded_reg_write
                             && !decoded_illegal;
+        mem_read_out      = valid_in && decoded_mem_read
+                            && !decoded_illegal;
         illegal_instr_out = valid_in && decoded_illegal;
         valid_out         = valid_in;
+        uses_rs1_out      = valid_in && decoded_uses_rs1;
+        uses_rs2_out      = valid_in && decoded_uses_rs2;
     end
 
 endmodule
