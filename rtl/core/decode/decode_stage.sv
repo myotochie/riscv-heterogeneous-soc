@@ -23,6 +23,7 @@ module decode_stage (
     output core_pkg::alu_op_t     alu_op_out,
     output logic                  reg_write_out,
     output logic                  mem_read_out,
+    output logic                  mem_write_out,
     output logic                  alu_src_out,
     output logic                  illegal_instr_out,
     output logic                  valid_out,
@@ -36,6 +37,7 @@ module decode_stage (
     core_pkg::alu_op_t alu_op;
     logic             decoded_reg_write;
     logic             decoded_mem_read;
+    logic             decoded_mem_write;
     logic             alu_src;
     logic             decoded_illegal;
     logic             decoded_uses_rs1;
@@ -53,6 +55,7 @@ module decode_stage (
         .alu_op       (alu_op),
         .reg_write    (decoded_reg_write),
         .mem_read     (decoded_mem_read),
+        .mem_write    (decoded_mem_write),
         .alu_src      (alu_src),
         .illegal_instr(decoded_illegal),
         .uses_rs1     (decoded_uses_rs1),
@@ -93,6 +96,8 @@ module decode_stage (
                             && !decoded_illegal;
         mem_read_out      = valid_in && decoded_mem_read
                             && !decoded_illegal;
+        mem_write_out = valid_in && decoded_mem_write
+                        && !decoded_illegal;
         illegal_instr_out = valid_in && decoded_illegal;
         valid_out         = valid_in;
         uses_rs1_out      = valid_in && decoded_uses_rs1;

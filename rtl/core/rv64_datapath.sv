@@ -32,6 +32,7 @@ module rv64_datapath (
         .alu_op       (alu_op),
         .reg_write    (reg_write),
         .mem_read     (),
+        .mem_write    (),
         .alu_src      (alu_src),
         .illegal_instr(illegal_instr)
     );
@@ -43,7 +44,9 @@ module rv64_datapath (
     );
 
     // Register file: two combinational reads, one synchronous write.
-    regfile u_regfile (
+    regfile #(
+        .ENABLE_WB_BYPASS(1'b0)
+    ) u_regfile (
         .clk (clk),
         .we  (reg_write && !illegal_instr),
         .rs1 (rs1),

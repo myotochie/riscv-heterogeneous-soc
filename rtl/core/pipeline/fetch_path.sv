@@ -63,6 +63,29 @@ module fetch_path #(
                 endcase
             end
 
+            4: begin
+                // End-to-end LD and load-use forwarding test.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04000093; // ADDI x1,x0,64
+                    64'h80000004: instr_mem_data = 32'h0000B283; // LD x5,0(x1)
+                    64'h80000008: instr_mem_data = 32'h00528333; // ADD x6,x5,x5
+                    default: ;
+                endcase
+            end
+
+            5: begin
+                // End-to-end SD -> LD -> ADD integration test.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04000093; // ADDI x1,x0,64
+                    64'h80000004: instr_mem_data = 32'h01500293; // ADDI x5,x0,21
+                    64'h80000008: instr_mem_data = 32'h0050B023; // SD x5,0(x1)
+                    64'h8000000C: instr_mem_data = 32'h0000B303; // LD x6,0(x1)
+                    64'h80000010: instr_mem_data = 32'h005303B3; // ADD x7,x6,x5
+                    default: ;
+                endcase
+            end
+
+
             default: ;
         endcase
     end

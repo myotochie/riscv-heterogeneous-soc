@@ -112,26 +112,72 @@ int main(int argc, char** argv) {
     dut.rs2 = 2;
     check_result(dut, 42, 99, "write disabled");
 
-    // Test 6: verify the value changes only after the rising edge.
+    // Test 6: combinational WB -> Decode bypass on rs1.
     dut.clk = 0;
     dut.we = 1;
     dut.rd = 1;
     dut.wd = 777;
-    dut.eval();
-
     dut.rs1 = 1;
     dut.rs2 = 2;
-    check_result(dut, 42, 99, "old value before rising edge");
 
+    check_result(dut, 777, 99, "WB bypass on rs1 before rising edge");
+
+    // Disable bypass before the clock edge:
+    // the register must still contain its old value.
+    dut.we = 0;
+    check_result(dut, 42, 99, "stored value unchanged before rising edge");
+
+    // Enable the write and commit it on the rising edge.
+    dut.we = 1;
     dut.clk = 1;
     dut.eval();
-    check_result(dut, 777, 99, "new value after rising edge");
 
     dut.clk = 0;
     dut.we = 0;
+    check_result(dut, 777, 99, "new value stored after rising edge");
+
+    // Test 7: combinational bypass on rs2.
+    dut.we = 1;
+    dut.rd = 2;
+    dut.wd = 888;
+    dut.rs1 = 1;
+    dut.rs2 = 2;
+    check_result(dut, 777, 888, "WB bypass on rs2");
+
+    // No rising edge: removing bypass restores stored x2.
+    dut.we = 0;
+    check_result(dut, 777, 99, "rs2 unchanged without clock edge");
+
+    // Test 8: both read ports target the same destination.
+    dut.we = 1;
+    dut.rd = 1;
+    dut.wd = 123;
+    dut.rs1 = 1;
+    dut.rs2 = 1;
+    check_result(dut, 123, 123, "WB bypass on both read ports");
+
+    dut.we = 0;
+    check_result(dut, 777, 777, "both ports read stored value");
+
+    // Test 9: x0 must never be bypassed.
+    dut.we = 1;
+    dut.rd = 0;
+    dut.wd = UINT64_MAX;
+    dut.rs1 = 0;
+    dut.rs2 = 0;
+    check_result(dut, 0, 0, "x0 bypass prohibited");
+
+    // Test 10: unrelated write destination must not affect reads.
+    dut.rd = 3;
+    dut.wd = 555;
+    dut.rs1 = 1;
+    dut.rs2 = 2;
+    check_result(dut, 777, 99, "unrelated write does not bypass");
+
+    dut.we = 0;
     dut.eval();
 
-    // Test 7: most significant bit set.
+    // Test 11: most significant bit set.
     write_register(dut, 3, UINT64_C(0x8000000000000000));
     dut.rs1 = 3;
     dut.rs2 = 0;
@@ -142,7 +188,7 @@ int main(int argc, char** argv) {
         "most significant bit"
     );
 
-    // Test 8: all 64 bits set.
+    // Test 12: all 64 bits set.
     write_register(dut, 4, UINT64_MAX);
     dut.rs1 = 4;
     dut.rs2 = 0;

@@ -27,6 +27,7 @@ int main(int argc, char** argv) {
 
     dut.rd_idx_ex_mem = 0;
     dut.reg_write_ex_mem = 0;
+    dut.mem_read_ex_mem = 0;
     dut.valid_ex_mem = 0;
 
     dut.rd_idx_mem_wb = 0;
@@ -126,6 +127,49 @@ int main(int argc, char** argv) {
     check(
         dut.forward_a == 0 && dut.forward_b == 0,
         "x0 is never forwarded"
+    );
+
+
+    // LD in EX/MEM: ALU result is an address, not load data.
+    dut.rs1_idx_ex = 5;
+    dut.rs2_idx_ex = 5;
+
+    dut.rd_idx_ex_mem = 5;
+    dut.reg_write_ex_mem = 1;
+    dut.mem_read_ex_mem = 1;
+    dut.valid_ex_mem = 1;
+
+    dut.rd_idx_mem_wb = 0;
+    dut.reg_write_mem_wb = 0;
+    dut.valid_mem_wb = 0;
+
+    dut.eval();
+
+    check(
+        dut.forward_a == 0 && dut.forward_b == 0,
+        "LD in EX/MEM must not forward address"
+    );
+
+    // MEM/WB remains available when EX/MEM contains a load.
+    dut.rd_idx_mem_wb = 5;
+    dut.reg_write_mem_wb = 1;
+    dut.valid_mem_wb = 1;
+
+    dut.eval();
+
+    check(
+        dut.forward_a == 1 && dut.forward_b == 1,
+        "MEM/WB forwarding remains available for load dependency"
+    );
+
+    // An ALU instruction in EX/MEM must still have priority.
+    dut.mem_read_ex_mem = 0;
+
+    dut.eval();
+
+    check(
+        dut.forward_a == 2 && dut.forward_b == 2,
+        "ALU EX/MEM forwarding retains priority"
     );
 
     std::cout << "\nTests run: " << tests_run << '\n';

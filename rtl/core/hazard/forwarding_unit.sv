@@ -4,6 +4,7 @@ module forwarding_unit (
 
     input  logic [4:0] rd_idx_ex_mem,
     input  logic       reg_write_ex_mem,
+    input  logic       mem_read_ex_mem,
     input  logic       valid_ex_mem,
 
     input  logic [4:0] rd_idx_mem_wb,
@@ -31,7 +32,8 @@ module forwarding_unit (
 
         // EX/MEM forwarding has higher priority
         if (valid_ex_mem && reg_write_ex_mem &&
-            rd_idx_ex_mem != 5'd0) begin
+            !mem_read_ex_mem &&
+              rd_idx_ex_mem != 5'd0) begin
 
             if (rd_idx_ex_mem == rs1_idx_ex)
                 forward_a = 2'b10;

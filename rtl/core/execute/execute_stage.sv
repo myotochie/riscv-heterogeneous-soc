@@ -16,6 +16,8 @@ module execute_stage #(
     input  core_pkg::alu_op_t alu_op_in,
     input  logic              alu_src_in,
     input  logic              reg_write_in,
+    input  logic              mem_read_in,
+    input  logic              mem_write_in,
     input  logic              illegal_instr_in,
     input  logic              valid_in,
 
@@ -82,9 +84,12 @@ module execute_stage #(
         reg_write_out     = valid_in && reg_write_in
                             && !illegal_instr_in;
 
-        mem_read_out      = 1'b0;
-        mem_write_out     = 1'b0;
-        mem_to_reg_out    = 1'b0;
+        mem_read_out      = valid_in && mem_read_in
+                            && !illegal_instr_in;
+        mem_write_out     = valid_in && mem_write_in
+                             && !illegal_instr_in;
+        mem_to_reg_out    = valid_in && mem_read_in
+                            && !illegal_instr_in;
 
         illegal_instr_out = valid_in && illegal_instr_in;
         valid_out         = valid_in;

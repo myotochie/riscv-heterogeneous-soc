@@ -57,6 +57,11 @@ int main(int argc, char** argv) {
     check(dut.pc_value == 0x80000000ULL,
           "Reset initializes PC");
 
+    check(dut.ex_mem_mem_read == 0 &&
+          dut.ex_mem_mem_to_reg == 0,
+          "Reset clears EX/MEM memory controls");
+
+
     dut.reset = 0;
 
     // Cycle 1: LD enters IF/ID.
@@ -85,6 +90,11 @@ int main(int argc, char** argv) {
           dut.ex_mem_instr == LD,
           "LD advances into EX/MEM during hazard");
 
+    check(dut.ex_mem_mem_read == 1 &&
+          dut.ex_mem_mem_to_reg == 1,
+          "LD propagates memory controls into EX/MEM");
+
+
     // Cycle 4: ADD resumes and enters ID/EX.
     tick(dut);
 
@@ -94,6 +104,11 @@ int main(int argc, char** argv) {
     check(dut.ex_mem_valid == 0,
           "Bubble reaches EX/MEM after hazard");
 
+    check(dut.ex_mem_mem_read == 0 &&
+          dut.ex_mem_mem_to_reg == 0,
+          "Hazard bubble clears EX/MEM memory controls");
+
+
     // Cycle 5: ADD advances into EX/MEM.
     tick(dut);
 
@@ -101,12 +116,22 @@ int main(int argc, char** argv) {
           dut.ex_mem_instr == ADD,
           "Dependent ADD advances after the bubble");
 
+    check(dut.ex_mem_mem_read == 0 &&
+          dut.ex_mem_mem_to_reg == 0,
+          "ADD does not request a memory read");
+
+
     // Cycle 6: ADDI advances into EX/MEM.
     tick(dut);
 
     check(dut.ex_mem_valid == 1 &&
           dut.ex_mem_instr == ADDI,
           "Following ADDI executes without extra stall");
+
+    check(dut.ex_mem_mem_read == 0 &&
+          dut.ex_mem_mem_to_reg == 0,
+          "ADDI does not request a memory read");
+
 
     std::cout << "\nTests run: " << checks
               << "\nTests failed: " << failures << '\n';

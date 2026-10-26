@@ -44,6 +44,7 @@ int main(int argc, char** argv) {
     dut.alu_op_in = ALU_ADD;
     dut.alu_src_in = 1;
     dut.reg_write_in = 1;
+    dut.mem_read_in = 0;
     dut.illegal_instr_in = 0;
     dut.valid_in = 1;
     dut.eval();
@@ -127,6 +128,68 @@ int main(int argc, char** argv) {
         dut.instr_out == 0x00500093 &&
         dut.rd_idx_out == 1,
         "PC, instruction and destination propagation"
+    );
+
+
+    // 9. Valid LD requests a memory read and memory write-back.
+    dut.instr_in = 0x0000B283;  // LD x5, 0(x1)
+    dut.rs1_value_in = 64;
+    dut.immediate_in = 0;
+    dut.rd_idx_in = 5;
+    dut.alu_op_in = ALU_ADD;
+    dut.alu_src_in = 1;
+    dut.reg_write_in = 1;
+    dut.mem_read_in = 1;
+    dut.valid_in = 1;
+    dut.illegal_instr_in = 0;
+    dut.eval();
+
+    check(
+        dut.alu_result_out == 64 &&
+        dut.mem_read_out == 1 &&
+        dut.mem_to_reg_out == 1 &&
+        dut.mem_write_out == 0 &&
+        dut.reg_write_out == 1,
+        "valid LD calculates address and enables memory read"
+    );
+
+    // 10. Invalid LD must not access memory.
+    dut.valid_in = 0;
+    dut.eval();
+
+    check(
+        dut.mem_read_out == 0 &&
+        dut.mem_to_reg_out == 0 &&
+        dut.mem_write_out == 0 &&
+        dut.reg_write_out == 0,
+        "invalid LD disables memory controls"
+    );
+
+    // 11. Illegal LD must not access memory.
+    dut.valid_in = 1;
+    dut.illegal_instr_in = 1;
+    dut.eval();
+
+    check(
+        dut.mem_read_out == 0 &&
+        dut.mem_to_reg_out == 0 &&
+        dut.mem_write_out == 0 &&
+        dut.reg_write_out == 0,
+        "illegal LD disables memory controls"
+    );
+
+    // 12. Valid ALU instruction must not request memory.
+    dut.mem_read_in = 0;
+    dut.illegal_instr_in = 0;
+    dut.instr_in = 0x00500093;
+    dut.eval();
+
+    check(
+        dut.mem_read_out == 0 &&
+        dut.mem_to_reg_out == 0 &&
+        dut.mem_write_out == 0 &&
+        dut.reg_write_out == 1,
+        "valid ALU instruction keeps memory controls disabled"
     );
 
     std::cout << "\nTests run: " << tests_run << '\n';

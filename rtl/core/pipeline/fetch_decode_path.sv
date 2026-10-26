@@ -32,6 +32,7 @@ module fetch_decode_path #(
     output core_pkg::alu_op_t id_ex_alu_op,
     output logic        id_ex_reg_write,
     output logic        id_ex_mem_read,
+    output logic                 id_ex_mem_write,
     output logic        id_ex_alu_src,
     output logic        id_ex_illegal_instr,
     output logic        id_ex_valid,
@@ -78,6 +79,7 @@ module fetch_decode_path #(
     );
 
     logic dec_mem_read;
+    logic dec_mem_write;
 
     decode_stage u_decode (
         .clk               (clk),
@@ -98,6 +100,7 @@ module fetch_decode_path #(
         .alu_op_out        (dec_alu_op),
         .reg_write_out     (dec_reg_write),
         .mem_read_out (dec_mem_read),
+        .mem_write_out     (dec_mem_write),
         .alu_src_out       (dec_alu_src),
         .illegal_instr_out (dec_illegal_instr),
         .valid_out         (dec_valid),
@@ -122,6 +125,7 @@ module fetch_decode_path #(
         .alu_op_in         (dec_alu_op),
         .reg_write_in      (dec_reg_write),
         .mem_read_in       (dec_mem_read),
+        .mem_write_in      (dec_mem_write),
         .alu_src_in        (dec_alu_src),
         .illegal_instr_in  (dec_illegal_instr),
         .valid_in          (dec_valid),
@@ -137,6 +141,7 @@ module fetch_decode_path #(
         .alu_op_out        (id_ex_alu_op),
         .reg_write_out     (id_ex_reg_write),
         .mem_read_out      (id_ex_mem_read),
+        .mem_write_out     (id_ex_mem_write),
         .alu_src_out       (id_ex_alu_src),
         .illegal_instr_out (id_ex_illegal_instr),
         .valid_out         (id_ex_valid)

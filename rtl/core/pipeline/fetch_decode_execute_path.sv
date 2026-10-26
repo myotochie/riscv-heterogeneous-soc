@@ -22,6 +22,10 @@ module fetch_decode_execute_path #(
     output logic [63:0] ex_mem_alu_result,
     output logic [4:0]  ex_mem_rd_idx,
     output logic        ex_mem_reg_write,
+    output logic        ex_mem_mem_read,
+    output logic        ex_mem_mem_write,
+    output logic [63:0] ex_mem_rs2_value,
+    output logic        ex_mem_mem_to_reg,
     output logic        ex_mem_illegal_instr,
     output logic        ex_mem_valid
 );
@@ -60,10 +64,7 @@ module fetch_decode_execute_path #(
     logic ex_mem_to_reg;
     logic ex_illegal_instr;
     logic ex_valid;
-
-    logic [63:0] unused_ex_mem_rs2_value;
     logic unused_ex_mem_read;
-    logic unused_ex_mem_write;
     logic unused_ex_mem_to_reg;
 
 
@@ -74,6 +75,7 @@ module fetch_decode_execute_path #(
 
     // Registered memory-read control from the EX stage.
     logic id_ex_mem_read;
+    logic id_ex_mem_write;
 
     hazard_detection_unit u_hazard_detection (
         .rs1_idx_id    (if_id_instr[19:15]),
@@ -99,6 +101,7 @@ module fetch_decode_execute_path #(
 
         .rd_idx_ex_mem    (ex_mem_rd_idx),
         .reg_write_ex_mem (ex_mem_reg_write),
+        .mem_read_ex_mem  (ex_mem_mem_read),
         .valid_ex_mem     (ex_mem_valid),
 
         .rd_idx_mem_wb    (mem_wb_rd_idx),
@@ -138,6 +141,7 @@ module fetch_decode_execute_path #(
         .id_ex_alu_op       (id_ex_alu_op),
         .id_ex_reg_write    (id_ex_reg_write),
         .id_ex_mem_read   (id_ex_mem_read),
+        .id_ex_mem_write  (id_ex_mem_write),
         .id_ex_alu_src      (id_ex_alu_src),
         .id_ex_illegal_instr(id_ex_illegal_instr),
         .id_ex_valid        (id_ex_valid),
@@ -160,6 +164,8 @@ module fetch_decode_execute_path #(
         .mem_wb_forward_data_in (wb_data),
         .alu_op_in         (id_ex_alu_op),
         .alu_src_in        (id_ex_alu_src),
+        .mem_read_in (id_ex_mem_read),
+        .mem_write_in    (id_ex_mem_write),
         .reg_write_in      (id_ex_reg_write),
         .illegal_instr_in  (id_ex_illegal_instr),
         .valid_in          (id_ex_valid),
@@ -195,14 +201,16 @@ module fetch_decode_execute_path #(
         .pc_out            (ex_mem_pc),
         .instr_out         (ex_mem_instr),
         .alu_result_out    (ex_mem_alu_result),
-        .rs2_value_out     (unused_ex_mem_rs2_value),
+        .rs2_value_out     (ex_mem_rs2_value),
         .rd_idx_out        (ex_mem_rd_idx),
         .reg_write_out     (ex_mem_reg_write),
-        .mem_read_out      (unused_ex_mem_read),
-        .mem_write_out     (unused_ex_mem_write),
-        .mem_to_reg_out    (unused_ex_mem_to_reg),
+        .mem_read_out      (ex_mem_mem_read),
+        .mem_write_out     (ex_mem_mem_write),
+        .mem_to_reg_out    (ex_mem_mem_to_reg),
         .illegal_instr_out (ex_mem_illegal_instr),
         .valid_out         (ex_mem_valid)
     );
+
+
 
 endmodule

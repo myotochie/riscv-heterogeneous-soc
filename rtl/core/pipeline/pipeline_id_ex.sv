@@ -18,6 +18,7 @@ module pipeline_id_ex (
     input  core_pkg::alu_op_t    alu_op_in,
     input  logic                 reg_write_in,
     input  logic                 mem_read_in,
+    input  logic                 mem_write_in,
     input  logic                 alu_src_in,
     input  logic                 illegal_instr_in,
     input  logic                 valid_in,
@@ -35,6 +36,7 @@ module pipeline_id_ex (
     output core_pkg::alu_op_t    alu_op_out,
     output logic                 reg_write_out,
     output logic                 mem_read_out,
+    output logic                 mem_write_out,
     output logic                 alu_src_out,
     output logic                 illegal_instr_out,
     output logic                 valid_out
@@ -55,6 +57,7 @@ module pipeline_id_ex (
             alu_op_out        <= core_pkg::ALU_ADD;
             reg_write_out     <= 1'b0;
             mem_read_out      <= 1'b0;
+            mem_write_out     <= 1'b0;
             alu_src_out       <= 1'b0;
             illegal_instr_out <= 1'b0;
             valid_out         <= 1'b0;
@@ -72,6 +75,7 @@ module pipeline_id_ex (
             alu_op_out        <= core_pkg::ALU_ADD;
             reg_write_out     <= 1'b0;
             mem_read_out      <= 1'b0;
+            mem_write_out     <= 1'b0;
             alu_src_out       <= 1'b0;
             illegal_instr_out <= 1'b0;
             valid_out         <= 1'b0;
@@ -89,6 +93,7 @@ module pipeline_id_ex (
             alu_op_out        <= alu_op_in;
             reg_write_out     <= valid_in && reg_write_in;
             mem_read_out      <= valid_in && mem_read_in;
+            mem_write_out     <= valid_in && mem_write_in;
             alu_src_out       <= alu_src_in;
             illegal_instr_out <= valid_in && illegal_instr_in;
             valid_out         <= valid_in;

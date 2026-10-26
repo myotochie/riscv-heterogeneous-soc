@@ -9,6 +9,7 @@ module decoder (
     output core_pkg::alu_op_t alu_op,
     output logic              reg_write,
     output logic              mem_read,
+    output logic              mem_write,
     output logic              alu_src,
     output logic              illegal_instr,
     output logic              uses_rs1,
@@ -31,6 +32,7 @@ module decoder (
         alu_op        = core_pkg::ALU_ADD;
         reg_write     = 1'b0;
         mem_read      = 1'b0;
+        mem_write     = 1'b0;
         alu_src       = 1'b0;
         illegal_instr = 1'b1;
         uses_rs1     = 1'b0;
@@ -135,9 +137,20 @@ module decoder (
             illegal_instr = 1'b0;
         end
 
+        // RV64I SD: store 64 bits at rs1 + S-type immediate.
+        if (opcode == 7'b0100011 && funct3 == 3'b011) begin
+            alu_op        = core_pkg::ALU_ADD;
+            reg_write     = 1'b0;
+            mem_read      = 1'b0;
+            mem_write     = 1'b1;
+            alu_src       = 1'b1;
+            illegal_instr = 1'b0;
+        end
+
         if (!illegal_instr) begin
             uses_rs1 = 1'b1;
-            uses_rs2 = (opcode == 7'b0110011);
+            uses_rs2 = (opcode == 7'b0110011 ||
+                        opcode == 7'b0100011);
         end
     end
 

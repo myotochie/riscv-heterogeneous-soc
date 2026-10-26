@@ -1,5 +1,7 @@
 
-module regfile (
+module regfile #(
+    parameter bit ENABLE_WB_BYPASS = 1'b1
+) (
     input  logic        clk,
     input  logic        we,
     input  logic [4:0]  rs1,
@@ -24,6 +26,8 @@ module regfile (
     always_comb begin
         if (rs1 == 5'd0)
             rd1 = 64'd0;
+        else if (ENABLE_WB_BYPASS && we && (rd == rs1))
+            rd1 = wd;
         else
             rd1 = regs[rs1];
     end
@@ -32,6 +36,8 @@ module regfile (
     always_comb begin
         if (rs2 == 5'd0)
             rd2 = 64'd0;
+        else if (ENABLE_WB_BYPASS && we && (rd == rs2))
+            rd2 = wd;
         else
             rd2 = regs[rs2];
     end

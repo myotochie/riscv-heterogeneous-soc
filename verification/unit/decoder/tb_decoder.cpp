@@ -54,6 +54,24 @@ uint32_t encode_i_type(
          | opcode;
 }
 
+uint32_t encode_s_type(
+    int16_t imm,
+    uint8_t rs2,
+    uint8_t rs1,
+    uint8_t funct3,
+    uint8_t opcode = 0x23
+) {
+    const uint32_t imm12 =
+        static_cast<uint16_t>(imm) & 0x0FFF;
+
+    return ((imm12 >> 5) << 25)
+         | (static_cast<uint32_t>(rs2) << 20)
+         | (static_cast<uint32_t>(rs1) << 15)
+         | (static_cast<uint32_t>(funct3) << 12)
+         | ((imm12 & 0x1F) << 7)
+         | opcode;
+}
+
 void check_instruction(
     Vdecoder& dut,
     uint32_t instruction,
@@ -232,6 +250,64 @@ int main(int argc, char** argv) {
     check_control_signals(dut,
         encode_r_type(0x01, rs2, rs1, 0b000, rd),
         false, false, false, "illegal instruction controls");
+
+    // RV64I SD: store doubleword, positive offset.
+    dut.instr = encode_s_type(16, 5, 1, 0b011);
+    dut.eval();
+
+    check_control_signals(
+        dut, encode_s_type(16, 5, 1, 0b011),
+        false, true, true,
+        "SD positive offset controls"
+    );
+
+    // Verify all store-specific controls.
+    ++tests_run;
+    if (dut.rs1 == 1 &&
+        dut.rs2 == 5 &&
+        dut.alu_op == ALU_ADD &&
+        dut.alu_src == 1 &&
+        dut.reg_write == 0 &&
+        dut.mem_write == 1 &&
+        dut.illegal_instr == 0) {
+        std::cout << "[PASS] SD decoding and memory write\\n";
+    } else {
+        ++tests_failed;
+        std::cout << "[FAIL] SD decoding and memory write\\n";
+    }
+
+    // Negative offset: control signals must remain valid.
+    dut.instr = encode_s_type(-8, 5, 1, 0b011);
+    dut.eval();
+
+    ++tests_run;
+    if (dut.mem_write == 1 &&
+        dut.mem_read == 0 &&
+        dut.reg_write == 0 &&
+        dut.uses_rs1 == 1 &&
+        dut.uses_rs2 == 1 &&
+        dut.illegal_instr == 0) {
+        std::cout << "[PASS] SD negative offset controls\\n";
+    } else {
+        ++tests_failed;
+        std::cout << "[FAIL] SD negative offset controls\\n";
+    }
+
+    // SW is unsupported: no memory write allowed.
+    dut.instr = encode_s_type(16, 5, 1, 0b010);
+    dut.eval();
+
+    ++tests_run;
+    if (dut.illegal_instr == 1 &&
+        dut.mem_write == 0 &&
+        dut.reg_write == 0 &&
+        dut.uses_rs1 == 0 &&
+        dut.uses_rs2 == 0) {
+        std::cout << "[PASS] Unsupported SW cannot write memory\\n";
+    } else {
+        ++tests_failed;
+        std::cout << "[FAIL] Unsupported SW cannot write memory\\n";
+    }
 
     std::cout << "\nTests run: " << tests_run << '\n';
     std::cout << "Tests failed: " << tests_failed << '\n';
