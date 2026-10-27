@@ -117,6 +117,77 @@ int main(int argc, char** argv) {
     check(dut.read_data == VALUE_B,
           "Second aligned memory location works");
 
+
+    // 9. Last valid 64-bit address: 4088.
+    constexpr uint64_t BOUNDARY_VALUE =
+        UINT64_C(0xFEDCBA9876543210);
+
+    dut.mem_read = 0;
+    dut.mem_write = 1;
+    dut.address = 4088;
+    dut.write_data = BOUNDARY_VALUE;
+    dut.eval();
+
+    check(dut.access_fault == 0,
+          "Boundary: last valid 64-bit address");
+
+    tick(dut);
+
+    dut.mem_write = 0;
+    dut.mem_read = 1;
+    dut.eval();
+
+    check(dut.read_data == BOUNDARY_VALUE,
+          "Boundary: last valid word preserved");
+
+    // 10. Last byte is not a valid 64-bit starting address.
+    dut.address = 4095;
+    dut.eval();
+
+    check(dut.access_fault == 1 && dut.read_data == 0,
+          "Boundary: unaligned last byte rejected");
+
+    // 11. Invalid unaligned write must not corrupt address 64.
+    dut.mem_read = 0;
+    dut.mem_write = 1;
+    dut.address = 65;
+    dut.write_data = UINT64_C(0xFFFFFFFFFFFFFFFF);
+    tick(dut);
+
+    dut.mem_write = 0;
+    dut.mem_read = 1;
+    dut.address = 64;
+    dut.eval();
+
+    check(dut.read_data == VALUE_A,
+          "Protection: unaligned write does not corrupt memory");
+
+    // 12. Out-of-range write must not alias address 64.
+    dut.mem_read = 0;
+    dut.mem_write = 1;
+    dut.address = UINT64_C(0x0000000100000040);
+    dut.write_data = UINT64_C(0xDEADBEEFCAFEBABE);
+    tick(dut);
+
+    dut.mem_write = 0;
+    dut.mem_read = 1;
+    dut.address = 64;
+    dut.eval();
+
+    check(dut.read_data == VALUE_A,
+          "Protection: high-address write cannot alias memory");
+
+    // 13. Writes to address 72 must not modify address 64.
+    dut.address = 72;
+    dut.eval();
+    check(dut.read_data == VALUE_B,
+          "Isolation: address 72 retains its own value");
+
+    dut.address = 64;
+    dut.eval();
+    check(dut.read_data == VALUE_A,
+          "Isolation: address 64 retains its own value");
+
     std::cout << "\nTests run: " << checks
               << "\nTests failed: " << failures << '\n';
 

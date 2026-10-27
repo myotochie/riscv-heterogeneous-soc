@@ -6,6 +6,7 @@ module writeback_stage (
     input  logic        reg_write_in,
     input  logic        mem_to_reg_in,
     input  logic        illegal_instr_in,
+    input  logic        mem_fault_in,
     input  logic        valid_in,
     input  logic        stall,
 
@@ -21,6 +22,7 @@ module writeback_stage (
         wb_we = valid_in
                 && reg_write_in
                 && !illegal_instr_in
+                && !mem_fault_in
                 && !stall
                 && (rd_idx_in != 5'd0);
     end

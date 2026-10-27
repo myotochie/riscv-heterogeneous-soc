@@ -8,6 +8,10 @@ module fetch_path #(
     input  logic        stall_if_id,
     input  logic        flush,
 
+    // Architectural PC redirection (trap/exception).
+    input  logic        trap_redirect,
+    input  logic [63:0] trap_target,
+
     output logic [63:0] pc_value,
     output logic [63:0] if_id_pc,
     output logic [31:0] if_id_instr,
@@ -86,6 +90,69 @@ module fetch_path #(
             end
 
 
+            6: begin
+                // Positive and negative LD/SD offset integration test.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h05000093; // ADDI x1,x0,80
+                    64'h80000004: instr_mem_data = 32'h02A00293; // ADDI x5,x0,42
+                    64'h80000008: instr_mem_data = 32'h0050B423; // SD x5,8(x1)
+                    64'h8000000C: instr_mem_data = 32'hFE50BC23; // SD x5,-8(x1)
+                    64'h80000010: instr_mem_data = 32'h0080B303; // LD x6,8(x1)
+                    64'h80000014: instr_mem_data = 32'hFF80B383; // LD x7,-8(x1)
+                    64'h80000018: instr_mem_data = 32'h00730433; // ADD x8,x6,x7
+                    default: ;
+                endcase
+            end
+
+            7: begin
+                // Full-width 64-bit LD -> SD -> LD integration test.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04000093; // ADDI x1,x0,64
+                    64'h80000004: instr_mem_data = 32'h0000B283; // LD x5,0(x1)
+                    64'h80000008: instr_mem_data = 32'h0050B423; // SD x5,8(x1)
+                    64'h8000000C: instr_mem_data = 32'h0080B303; // LD x6,8(x1)
+                    default: ;
+                endcase
+            end
+
+            8: begin
+                // Invalid unaligned LD must not update x5.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04100093; // ADDI x1,x0,65
+                    64'h80000004: instr_mem_data = 32'h06300293; // ADDI x5,x0,99
+                    64'h80000008: instr_mem_data = 32'h0000B283; // LD x5,0(x1)
+                    64'h8000000C: instr_mem_data = 32'h00700313; // ADDI x6,x0,7
+                    default: ;
+                endcase
+            end
+
+            9: begin
+                // Dependency immediately after an invalid LD.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04100093; // ADDI x1,x0,65
+                    64'h80000004: instr_mem_data = 32'h06300293; // ADDI x5,x0,99
+                    64'h80000008: instr_mem_data = 32'h0000B283; // LD x5,0(x1)
+                    64'h8000000C: instr_mem_data = 32'h00028333; // ADD x6,x5,x0
+                    64'h80000010: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+                    default: ;
+                endcase
+            end
+
+            10: begin
+                // Precise trap test: misaligned LD and trap handler.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04100093; // ADDI x1,x0,65
+                    64'h80000004: instr_mem_data = 32'h06300293; // ADDI x5,x0,99
+                    64'h80000008: instr_mem_data = 32'h0000B283; // LD x5,0(x1)
+                    64'h8000000C: instr_mem_data = 32'h02A00313; // ADDI x6,x0,42
+                    64'h80000010: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+
+                    // Exception handler.
+                    64'h80000100: instr_mem_data = 32'h07B00513; // ADDI x10,x0,123
+                    default: ;
+                endcase
+            end
+
             default: ;
         endcase
     end
@@ -95,8 +162,8 @@ pc u_pc (
     .clk             (clk),
     .reset           (reset),
     .stall            (stall_pc),
-    .redirect        (1'b0),
-    .redirect_target (64'b0),
+    .redirect        (trap_redirect),
+    .redirect_target (trap_target),
     .pc_value        (pc_value)
 );	
     // Instruction Fetch / Instruction Decode register.
