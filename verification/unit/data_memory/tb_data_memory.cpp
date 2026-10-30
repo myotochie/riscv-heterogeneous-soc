@@ -188,6 +188,52 @@ int main(int argc, char** argv) {
     check(dut.read_data == VALUE_A,
           "Isolation: address 64 retains its own value");
 
+
+// 14. Out-of-range store must not modify the last valid word.
+dut.mem_read = 0;
+dut.mem_write = 1;
+dut.address = 0x1000;
+dut.write_data = UINT64_C(0xDEADBEEFCAFEBABE);
+dut.eval();
+
+check(dut.access_fault == 1 &&
+      dut.out_of_range_fault == 1 &&
+      dut.misaligned_fault == 0,
+      "Protection: out-of-range SD correctly classified");
+
+tick(dut);
+
+dut.mem_write = 0;
+dut.mem_read = 1;
+dut.address = 4088;
+dut.eval();
+
+check(dut.read_data == BOUNDARY_VALUE,
+      "Protection: out-of-range SD preserves last valid word");
+
+
+// 15. Misaligned store at the boundary must not corrupt memory.
+dut.mem_read = 0;
+dut.mem_write = 1;
+dut.address = 4095;
+dut.write_data = UINT64_C(0xFFFFFFFFFFFFFFFF);
+dut.eval();
+
+check(dut.access_fault == 1 &&
+      dut.misaligned_fault == 1,
+      "Protection: boundary misaligned SD rejected");
+
+tick(dut);
+
+dut.mem_write = 0;
+dut.mem_read = 1;
+dut.address = 4088;
+dut.eval();
+
+check(dut.read_data == BOUNDARY_VALUE,
+      "Protection: boundary misaligned SD preserves memory");
+
+
     std::cout << "\nTests run: " << checks
               << "\nTests failed: " << failures << '\n';
 

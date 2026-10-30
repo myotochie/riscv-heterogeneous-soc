@@ -153,6 +153,52 @@ module fetch_path #(
                 endcase
             end
 
+
+            11: begin
+                // Out-of-range memory access at address 0x1000.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h40000093; // ADDI x1,x0,1024
+                    64'h80000004: instr_mem_data = 32'h40008093; // ADDI x1,x1,1024
+                    64'h80000008: instr_mem_data = 32'h40008093; // ADDI x1,x1,1024
+                    64'h8000000C: instr_mem_data = 32'h40008093; // ADDI x1,x1,1024
+                    64'h80000010: instr_mem_data = 32'h06300293; // ADDI x5,x0,99
+                    64'h80000014: instr_mem_data = 32'h0000B303; // LD x6,0(x1)
+                    64'h80000018: instr_mem_data = 32'h02A00393; // ADDI x7,x0,42
+                    64'h8000001C: instr_mem_data = 32'h00800413; // ADDI x8,x0,8
+                    64'h80000100: instr_mem_data = 32'h07B00513; // ADDI x10,x0,123
+                    default: ;
+                endcase
+            end
+
+            12: begin
+                // Store address misaligned: address 0x41.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04100093; // ADDI x1,x0,65
+                    64'h80000004: instr_mem_data = 32'h06300293; // ADDI x5,x0,99
+                    64'h80000008: instr_mem_data = 32'h0050B023; // SD x5,0(x1)
+                    64'h8000000C: instr_mem_data = 32'h02A00393; // ADDI x7,x0,42
+                    64'h80000010: instr_mem_data = 32'h00800413; // ADDI x8,x0,8
+                    64'h80000100: instr_mem_data = 32'h07B00513; // ADDI x10,x0,123
+                    default: ;
+                endcase
+            end
+
+            13: begin
+                // Out-of-range memory access at address 0x1000.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h40000093; // ADDI x1,x0,1024
+                    64'h80000004: instr_mem_data = 32'h40008093; // ADDI x1,x1,1024
+                    64'h80000008: instr_mem_data = 32'h40008093; // ADDI x1,x1,1024
+                    64'h8000000C: instr_mem_data = 32'h40008093; // ADDI x1,x1,1024
+                    64'h80000010: instr_mem_data = 32'h06300293; // ADDI x5,x0,99
+                    64'h80000014: instr_mem_data = 32'h0050B023; // SD x5,0(x1)
+                    64'h80000018: instr_mem_data = 32'h02A00393; // ADDI x7,x0,42
+                    64'h8000001C: instr_mem_data = 32'h00800413; // ADDI x8,x0,8
+                    64'h80000100: instr_mem_data = 32'h07B00513; // ADDI x10,x0,123
+                    default: ;
+                endcase
+            end
+
             default: ;
         endcase
     end

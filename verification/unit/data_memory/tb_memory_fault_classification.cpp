@@ -41,11 +41,12 @@ int main(int argc, char** argv) {
 
     check("Aligned LD",          0x40,   true,  false, false, false);
     check("Misaligned LD",       0x41,   true,  false, true,  false);
+    check("Out-of-range SD", 0x1000, false, true, false, true);
     check("Out-of-range LD",     0x1000, true,  false, false, true);
     check("Misaligned SD",       0x41,   false, true,  true,  false);
     check("Inactive memory",     0x41,   false, false, false, false);
 
-    std::cout << "Tests run: 5\n";
+    std::cout << "Tests run: 6\n";
     std::cout << "Tests failed: " << failed << '\n';
 
     dut.final();
