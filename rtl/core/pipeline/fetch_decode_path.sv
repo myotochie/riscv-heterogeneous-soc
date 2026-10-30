@@ -7,6 +7,9 @@ module fetch_decode_path #(
     input  logic        stall,
     input  logic        flush,
 
+    input  logic        trap_redirect,
+    input  logic [63:0] trap_target,
+
     // Local hazard controls
     input  logic        hazard_stall_pc,
     input  logic        hazard_stall_if_id,
@@ -72,6 +75,8 @@ module fetch_decode_path #(
         .stall_pc    (effective_stall_pc),
         .stall_if_id (effective_stall_if_id),
         .flush       (flush),
+        .trap_redirect (trap_redirect),
+        .trap_target   (trap_target),
         .pc_value    (pc_value),
         .if_id_pc    (if_id_pc),
         .if_id_instr (if_id_instr),

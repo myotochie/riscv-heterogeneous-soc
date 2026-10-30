@@ -7,6 +7,10 @@ module fetch_decode_execute_path #(
     input  logic        stall,
     input  logic        flush,
 
+    input  logic        trap_redirect,
+    input  logic [63:0] trap_target,
+    input  logic        trap_flush_young,
+
     input  logic        wb_we,
     input  logic [4:0]  wb_rd,
     input  logic [63:0] wb_data,
@@ -119,7 +123,9 @@ module fetch_decode_execute_path #(
         .clk                 (clk),
         .reset               (reset),
         .stall               (stall),
-        .flush               (flush),
+        .flush               (flush || trap_flush_young),
+        .trap_redirect (trap_redirect),
+        .trap_target   (trap_target),
         .hazard_stall_pc     (hazard_stall_pc),
         .hazard_stall_if_id  (hazard_stall_if_id),
         .hazard_flush_id_ex  (hazard_flush_id_ex),
@@ -185,7 +191,7 @@ module fetch_decode_execute_path #(
     pipeline_ex_mem u_ex_mem (
         .clk               (clk),
         .reset             (reset),
-        .flush             (flush),
+        .flush             (flush || trap_flush_young),
         .stall             (stall),
         .pc_in             (ex_pc),
         .instr_in          (ex_instr),

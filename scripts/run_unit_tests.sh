@@ -196,6 +196,7 @@ run_test rv64_pipeline \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     rtl/core/writeback/writeback_stage.sv \
     rtl/core/memory/data_memory.sv \
+    rtl/core/exception/exception_controller.sv \
     rtl/core/pipeline/rv64_pipeline.sv \
     verification/integration/tb_rv64_regfile.cpp
 echo
@@ -224,6 +225,7 @@ verilator --cc --exe --build --sv \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     rtl/core/writeback/writeback_stage.sv \
     rtl/core/memory/data_memory.sv \
+    rtl/core/exception/exception_controller.sv \
     rtl/core/pipeline/rv64_pipeline.sv \
     "$(pwd)/verification/integration/tb_rv64_raw_forwarding.cpp"
 
@@ -257,6 +259,7 @@ verilator --cc --exe --build --sv \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     rtl/core/writeback/writeback_stage.sv \
     rtl/core/memory/data_memory.sv \
+    rtl/core/exception/exception_controller.sv \
     rtl/core/pipeline/rv64_pipeline.sv \
     "$(pwd)/verification/integration/tb_rv64_forwarding_priority.cpp"
 

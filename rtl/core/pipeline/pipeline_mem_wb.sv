@@ -14,6 +14,7 @@ module pipeline_mem_wb (
     input  logic        reg_write_in,
     input  logic        mem_to_reg_in,
     input  logic        illegal_instr_in,
+    input  logic        mem_fault_in,
     input  logic        valid_in,
 
     output logic [63:0] pc_out,
@@ -25,6 +26,7 @@ module pipeline_mem_wb (
     output logic        reg_write_out,
     output logic        mem_to_reg_out,
     output logic        illegal_instr_out,
+    output logic        mem_fault_out,
     output logic        valid_out
 );
 
@@ -39,6 +41,7 @@ module pipeline_mem_wb (
             reg_write_out     <= 1'b0;
             mem_to_reg_out    <= 1'b0;
             illegal_instr_out <= 1'b0;
+            mem_fault_out     <= 1'b0;
             valid_out         <= 1'b0;
         end
     endtask
@@ -58,6 +61,7 @@ module pipeline_mem_wb (
             reg_write_out     <= valid_in && reg_write_in;
             mem_to_reg_out    <= valid_in && mem_to_reg_in;
             illegal_instr_out <= valid_in && illegal_instr_in;
+            mem_fault_out     <= valid_in && mem_fault_in;
             valid_out         <= valid_in;
         end
     end
