@@ -24,6 +24,7 @@ module execute_stage #(
     output logic [63:0]       pc_out,
     output logic [31:0]       instr_out,
     output logic [63:0]       alu_result_out,
+    output logic [63:0]       forwarded_rs1_out,
     output logic [63:0]       rs2_value_out,
     output logic [4:0]        rd_idx_out,
 
@@ -63,6 +64,8 @@ module execute_stage #(
         end
     endgenerate
 
+    assign forwarded_rs1_out = forwarded_rs1;
+
     assign alu_operand_b = alu_src_in
                          ? immediate_in
                          : forwarded_rs2;
@@ -81,8 +84,12 @@ module execute_stage #(
         rs2_value_out     = forwarded_rs2;
         rd_idx_out        = rd_idx_in;
 
+        // Temporary safety guard:
+        // CSR instructions must not write an ALU result into a GPR
+        // until the architectural CSR result path is implemented.
         reg_write_out     = valid_in && reg_write_in
-                            && !illegal_instr_in;
+                            && !illegal_instr_in
+                            && !(instr_in[6:0] == 7'b1110011);
 
         mem_read_out      = valid_in && mem_read_in
                             && !illegal_instr_in;

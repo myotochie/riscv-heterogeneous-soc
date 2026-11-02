@@ -199,6 +199,19 @@ module fetch_path #(
                 endcase
             end
 
+            14: begin
+                // CSR architectural commit integration.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h20000093; // ADDI x1,x0,512
+                    64'h80000004: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000008: instr_mem_data = 32'h00000013; // NOP
+                    64'h8000000C: instr_mem_data = 32'h30509073; // CSRRW x0,mtvec,x1
+                    64'h80000010: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000014: instr_mem_data = 32'h00000013; // NOP
+                    default: ;
+                endcase
+            end
+
             default: ;
         endcase
     end

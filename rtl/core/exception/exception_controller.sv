@@ -2,6 +2,7 @@ module exception_controller (
     input  logic        reset,
     input  logic        stall,
 
+    input logic [63:0] mtvec,
     input  logic        mem_valid,
     input  logic        mem_read,
     input  logic        mem_write,
@@ -18,11 +19,10 @@ module exception_controller (
     output logic [63:0] trap_tval
 );
 
-    localparam logic [63:0] TRAP_VECTOR = 64'h0000000080000100;
 
     always_comb begin
         trap_valid  = 1'b0;
-        trap_target = TRAP_VECTOR;
+        trap_target = {mtvec[63:2], 2'b00};
         trap_epc    = 64'b0;
         trap_cause  = 64'b0;
         trap_tval   = 64'b0;

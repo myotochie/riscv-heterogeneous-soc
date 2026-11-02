@@ -22,6 +22,9 @@ module pipeline_id_ex (
     input  logic                 alu_src_in,
     input  logic                 illegal_instr_in,
     input  logic                 valid_in,
+    input  logic                 csr_valid_in,
+    input  logic [2:0]           csr_funct3_in,
+    input  logic                 mret_valid_in,
 
     output logic [63:0]          pc_out,
     output logic [31:0]          instr_out,
@@ -39,7 +42,10 @@ module pipeline_id_ex (
     output logic                 mem_write_out,
     output logic                 alu_src_out,
     output logic                 illegal_instr_out,
-    output logic                 valid_out
+    output logic                 valid_out,
+    output logic                 csr_valid_out,
+    output logic [2:0]           csr_funct3_out,
+    output logic                 mret_valid_out
 );
 
     always_ff @(posedge clk) begin
@@ -61,6 +67,9 @@ module pipeline_id_ex (
             alu_src_out       <= 1'b0;
             illegal_instr_out <= 1'b0;
             valid_out         <= 1'b0;
+            csr_valid_out     <= 1'b0;
+            csr_funct3_out    <= 3'b000;
+            mret_valid_out    <= 1'b0;
         end else if (flush) begin
             pc_out            <= 64'b0;
             instr_out         <= 32'h00000013;
@@ -79,6 +88,9 @@ module pipeline_id_ex (
             alu_src_out       <= 1'b0;
             illegal_instr_out <= 1'b0;
             valid_out         <= 1'b0;
+            csr_valid_out     <= 1'b0;
+            csr_funct3_out    <= 3'b000;
+            mret_valid_out    <= 1'b0;
         end else if (!stall) begin
             pc_out            <= pc_in;
             instr_out         <= instr_in;
@@ -97,6 +109,9 @@ module pipeline_id_ex (
             alu_src_out       <= alu_src_in;
             illegal_instr_out <= valid_in && illegal_instr_in;
             valid_out         <= valid_in;
+            csr_valid_out     <= valid_in && csr_valid_in;
+            csr_funct3_out    <= csr_funct3_in;
+            mret_valid_out    <= valid_in && mret_valid_in;
        end
     end
 

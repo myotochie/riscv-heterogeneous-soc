@@ -58,6 +58,12 @@ int main(int argc, char** argv) {
     dut.reset = 0;
     dut.eval();
 
+    bool csr_capture_checked = false;
+    bool csr_capture_correct = false;
+    bool csr_context_persisted = true;
+    bool csr_mtvec_correct = false;
+    bool csr_mstatus_correct = false;
+
     bool saw_trap = false;
     bool saw_redirect = false;
     bool saw_x1 = false;
@@ -117,8 +123,36 @@ int main(int argc, char** argv) {
             }
         }
 
+        const bool trap_before_edge = dut.trap_valid_o;
+
         dut.clk = 1;
         dut.eval();
+
+        if (trap_before_edge && !csr_capture_checked) {
+            csr_capture_checked = true;
+
+            csr_capture_correct =
+                dut.csr_mepc_o == fault_pc &&
+                dut.csr_mcause_o == expected_cause &&
+                dut.csr_mtval_o == expected_tval;
+
+            csr_mtvec_correct =
+                dut.csr_mtvec_o == handler_pc;
+
+            // Initial MIE=0; trap must preserve MPIE=0 and MPP=M.
+            csr_mstatus_correct =
+                ((dut.csr_mstatus_o >> 3) & 1ULL) == 0 &&
+                ((dut.csr_mstatus_o >> 7) & 1ULL) == 0 &&
+                ((dut.csr_mstatus_o >> 11) & 3ULL) == 3;
+        }
+
+        if (csr_capture_checked) {
+            csr_context_persisted =
+                csr_context_persisted &&
+                dut.csr_mepc_o == fault_pc &&
+                dut.csr_mcause_o == expected_cause &&
+                dut.csr_mtval_o == expected_tval;
+        }
     }
 
     check(saw_trap, "Trap detected");
@@ -131,6 +165,11 @@ int main(int argc, char** argv) {
     check(!saw_faulting_wb, "Faulting instruction did not write back");
     check(!saw_younger_wb, "Younger instructions cancelled");
     check(saw_x10, "Trap handler executed");
+    check(csr_capture_checked, "CSR capture observed");
+    check(csr_capture_correct, "CSR exception context captured");
+    check(csr_context_persisted, "CSR context retained");
+    check(csr_mtvec_correct, "CSR mtvec matches handler");
+    check(csr_mstatus_correct, "CSR mstatus trap state correct");
 
     std::printf("PROGRAM_ID=%d\n", program);
     std::printf("Tests run: %d\n", tests);

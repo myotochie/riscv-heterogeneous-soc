@@ -15,6 +15,8 @@ module fetch_decode_execute_path #(
     input  logic [4:0]  wb_rd,
     input  logic [63:0] wb_data,
 
+    input  logic [63:0] csr_read_data,
+
     // Informations MEM/WB pour le forwarding
     input  logic        mem_wb_valid,
     input  logic        mem_wb_reg_write,
@@ -31,7 +33,19 @@ module fetch_decode_execute_path #(
     output logic [63:0] ex_mem_rs2_value,
     output logic        ex_mem_mem_to_reg,
     output logic        ex_mem_illegal_instr,
-    output logic        ex_mem_valid
+    output logic        ex_mem_valid,
+    output logic        ex_mem_csr_valid,
+    output logic [2:0]  ex_mem_csr_funct3,
+    output logic        ex_mem_mret_valid,
+    output logic [11:0] ex_mem_csr_addr,
+    output logic [63:0] ex_mem_csr_new_value,
+    output logic [63:0] ex_mem_csr_read_result,
+    output logic        ex_mem_csr_write_enable,
+
+    output logic [11:0] csr_read_addr,
+    output logic [63:0] ex_csr_new_value,
+    output logic [63:0] ex_csr_read_result,
+    output logic        ex_csr_write_enable
 );
 
     logic [63:0] if_id_pc;
@@ -56,10 +70,17 @@ module fetch_decode_execute_path #(
     logic id_ex_alu_src;
     logic id_ex_illegal_instr;
     logic id_ex_valid;
+    logic       id_ex_csr_valid;
+    logic [2:0] id_ex_csr_funct3;
+    logic       id_ex_mret_valid;
 
     logic [63:0] ex_pc;
     logic [31:0] ex_instr;
     logic [63:0] ex_alu_result;
+    logic [63:0] ex_forwarded_rs1;
+    logic [63:0] csr_new_value_raw;
+    logic [63:0] csr_read_result_raw;
+    logic        csr_write_enable_raw;
     logic [63:0] ex_rs2_value;
     logic [4:0]  ex_rd_idx;
     logic ex_reg_write;
@@ -68,6 +89,9 @@ module fetch_decode_execute_path #(
     logic ex_mem_to_reg;
     logic ex_illegal_instr;
     logic ex_valid;
+    logic ex_csr_valid;
+    logic [2:0] ex_csr_funct3;
+    logic ex_mret_valid;
     logic unused_ex_mem_read;
     logic unused_ex_mem_to_reg;
 
@@ -152,7 +176,10 @@ module fetch_decode_execute_path #(
         .id_ex_illegal_instr(id_ex_illegal_instr),
         .id_ex_valid        (id_ex_valid),
         .dec_uses_rs1       (dec_uses_rs1),
-        .dec_uses_rs2       (dec_uses_rs2)
+        .dec_uses_rs2       (dec_uses_rs2),
+        .id_ex_csr_valid    (id_ex_csr_valid),
+        .id_ex_csr_funct3   (id_ex_csr_funct3),
+        .id_ex_mret_valid   (id_ex_mret_valid)
     );
 
     execute_stage #(
@@ -178,6 +205,7 @@ module fetch_decode_execute_path #(
         .pc_out            (ex_pc),
         .instr_out         (ex_instr),
         .alu_result_out    (ex_alu_result),
+        .forwarded_rs1_out (ex_forwarded_rs1),
         .rs2_value_out     (ex_rs2_value),
         .rd_idx_out        (ex_rd_idx),
         .reg_write_out     (ex_reg_write),
@@ -187,6 +215,33 @@ module fetch_decode_execute_path #(
         .illegal_instr_out (ex_illegal_instr),
         .valid_out         (ex_valid)
     );
+
+    // Combinational CSR read address for the EX-stage instruction.
+    assign csr_read_addr = id_ex_instr[31:20];
+
+    csr_execute u_csr_execute (
+        .funct3            (id_ex_csr_funct3),
+        .rs1_idx           (id_ex_rs1_idx),
+        .rs1_value         (ex_forwarded_rs1),
+        .csr_old_value     (csr_read_data),
+        .csr_new_value     (csr_new_value_raw),
+        .csr_write_enable  (csr_write_enable_raw),
+        .csr_read_result   (csr_read_result_raw)
+    );
+
+    // Validity gating: no CSR side effects are enabled here.
+    assign ex_csr_new_value = csr_new_value_raw;
+    assign ex_csr_read_result = csr_read_result_raw;
+    assign ex_csr_write_enable =
+        ex_valid && id_ex_csr_valid &&
+        !ex_illegal_instr && csr_write_enable_raw;
+
+    // CSR metadata propagation only: no architectural side effects.
+    assign ex_csr_valid  = ex_valid && id_ex_csr_valid
+                           && !ex_illegal_instr;
+    assign ex_csr_funct3 = id_ex_csr_funct3;
+    assign ex_mret_valid = ex_valid && id_ex_mret_valid
+                           && !ex_illegal_instr;
 
     pipeline_ex_mem u_ex_mem (
         .clk               (clk),
@@ -204,6 +259,13 @@ module fetch_decode_execute_path #(
         .mem_to_reg_in     (ex_mem_to_reg),
         .illegal_instr_in  (ex_illegal_instr),
         .valid_in          (ex_valid),
+        .csr_valid_in      (ex_csr_valid),
+        .csr_funct3_in     (ex_csr_funct3),
+        .mret_valid_in     (ex_mret_valid),
+        .csr_addr_in(csr_read_addr),
+        .csr_new_value_in(ex_csr_new_value),
+        .csr_read_result_in(ex_csr_read_result),
+        .csr_write_enable_in(ex_csr_write_enable),
         .pc_out            (ex_mem_pc),
         .instr_out         (ex_mem_instr),
         .alu_result_out    (ex_mem_alu_result),
@@ -214,7 +276,14 @@ module fetch_decode_execute_path #(
         .mem_write_out     (ex_mem_mem_write),
         .mem_to_reg_out    (ex_mem_mem_to_reg),
         .illegal_instr_out (ex_mem_illegal_instr),
-        .valid_out         (ex_mem_valid)
+        .valid_out         (ex_mem_valid),
+        .csr_valid_out     (ex_mem_csr_valid),
+        .csr_funct3_out    (ex_mem_csr_funct3),
+        .mret_valid_out    (ex_mem_mret_valid),
+        .csr_addr_out(ex_mem_csr_addr),
+        .csr_new_value_out(ex_mem_csr_new_value),
+        .csr_read_result_out(ex_mem_csr_read_result),
+        .csr_write_enable_out(ex_mem_csr_write_enable)
     );
 
 

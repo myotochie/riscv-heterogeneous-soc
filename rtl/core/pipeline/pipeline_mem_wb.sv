@@ -16,6 +16,13 @@ module pipeline_mem_wb (
     input  logic        illegal_instr_in,
     input  logic        mem_fault_in,
     input  logic        valid_in,
+    input  logic        csr_valid_in,
+    input  logic [2:0]  csr_funct3_in,
+    input  logic        mret_valid_in,
+    input  logic [11:0] csr_addr_in,
+    input  logic [63:0] csr_new_value_in,
+    input  logic [63:0] csr_read_result_in,
+    input  logic        csr_write_enable_in,
 
     output logic [63:0] pc_out,
     output logic [31:0] instr_out,
@@ -27,7 +34,14 @@ module pipeline_mem_wb (
     output logic        mem_to_reg_out,
     output logic        illegal_instr_out,
     output logic        mem_fault_out,
-    output logic        valid_out
+    output logic        valid_out,
+    output logic        csr_valid_out,
+    output logic [2:0]  csr_funct3_out,
+    output logic        mret_valid_out,
+    output logic [11:0] csr_addr_out,
+    output logic [63:0] csr_new_value_out,
+    output logic [63:0] csr_read_result_out,
+    output logic        csr_write_enable_out
 );
 
     task automatic clear_register;
@@ -43,6 +57,13 @@ module pipeline_mem_wb (
             illegal_instr_out <= 1'b0;
             mem_fault_out     <= 1'b0;
             valid_out         <= 1'b0;
+            csr_valid_out     <= 1'b0;
+            csr_funct3_out    <= 3'b000;
+            mret_valid_out    <= 1'b0;
+            csr_addr_out <= 12'b0;
+            csr_new_value_out <= 64'b0;
+            csr_read_result_out <= 64'b0;
+            csr_write_enable_out <= 1'b0;
         end
     endtask
 
@@ -63,6 +84,14 @@ module pipeline_mem_wb (
             illegal_instr_out <= valid_in && illegal_instr_in;
             mem_fault_out     <= valid_in && mem_fault_in;
             valid_out         <= valid_in;
+            csr_valid_out     <= valid_in && csr_valid_in;
+            csr_funct3_out    <= csr_funct3_in;
+            mret_valid_out    <= valid_in && mret_valid_in;
+            csr_addr_out <= csr_addr_in;
+            csr_new_value_out <= csr_new_value_in;
+            csr_read_result_out <= csr_read_result_in;
+            csr_write_enable_out <=
+                valid_in && csr_valid_in && csr_write_enable_in;
         end
     end
 

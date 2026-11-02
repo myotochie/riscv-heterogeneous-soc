@@ -13,7 +13,12 @@ module decoder (
     output logic              alu_src,
     output logic              illegal_instr,
     output logic              uses_rs1,
-    output logic              uses_rs2
+    output logic              uses_rs2,
+
+    // Machine-mode SYSTEM instruction decode.
+    output logic              csr_valid,
+    output logic [2:0]        csr_funct3,
+    output logic              mret_valid
 );
 
     logic [6:0] opcode;
@@ -37,6 +42,9 @@ module decoder (
         illegal_instr = 1'b1;
         uses_rs1     = 1'b0;
         uses_rs2     = 1'b0;
+        csr_valid    = 1'b0;
+        csr_funct3   = 3'b000;
+        mret_valid   = 1'b0;
 
         // R-type integer register-register operations.
         if (opcode == 7'b0110011) begin
@@ -147,8 +155,30 @@ module decoder (
             illegal_instr = 1'b0;
         end
 
+        // SYSTEM opcode: CSR operations and MRET.
+        if (opcode == 7'b1110011) begin
+            if (instr == 32'h30200073) begin
+                // MRET: return from machine-mode trap.
+                mret_valid   = 1'b1;
+                illegal_instr = 1'b0;
+            end else if (
+                funct3 == 3'b001 ||
+                funct3 == 3'b010 ||
+                funct3 == 3'b011 ||
+                funct3 == 3'b101 ||
+                funct3 == 3'b110 ||
+                funct3 == 3'b111
+            ) begin
+                csr_valid    = 1'b1;
+                csr_funct3   = funct3;
+                reg_write    = 1'b1;
+                illegal_instr = 1'b0;
+            end
+        end
+
         if (!illegal_instr) begin
-            uses_rs1 = 1'b1;
+            uses_rs1 = (opcode != 7'b1110011) ||
+                       (csr_valid && !funct3[2]);
             uses_rs2 = (opcode == 7'b0110011 ||
                         opcode == 7'b0100011);
         end

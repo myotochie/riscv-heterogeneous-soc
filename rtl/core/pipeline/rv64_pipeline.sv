@@ -24,7 +24,14 @@ module rv64_pipeline #(
     output logic        trap_valid_o,
     output logic [63:0] trap_epc_o,
     output logic [63:0] trap_cause_o,
-    output logic [63:0] trap_tval_o
+    output logic [63:0] trap_tval_o,
+
+    // CSR architectural state observation (verification).
+    output logic [63:0] csr_mtvec_o,
+    output logic [63:0] csr_mepc_o,
+    output logic [63:0] csr_mcause_o,
+    output logic [63:0] csr_mtval_o,
+    output logic [63:0] csr_mstatus_o
 );
 
     logic [63:0] ex_mem_pc;
@@ -38,6 +45,21 @@ module rv64_pipeline #(
     logic        ex_mem_mem_to_reg;
     logic        ex_mem_illegal_instr;
     logic        ex_mem_valid;
+    logic        ex_mem_csr_valid;
+    logic [2:0]  ex_mem_csr_funct3;
+    logic        ex_mem_mret_valid;
+    logic [11:0] ex_mem_csr_addr;
+    logic [63:0] ex_mem_csr_new_value;
+    logic [63:0] ex_mem_csr_read_result;
+    logic ex_mem_csr_write_enable;
+
+    logic        mem_wb_csr_valid;
+    logic [2:0]  mem_wb_csr_funct3;
+    logic        mem_wb_mret_valid;
+    logic [11:0] mem_wb_csr_addr;
+    logic [63:0] mem_wb_csr_new_value;
+    logic [63:0] mem_wb_csr_read_result;
+    logic mem_wb_csr_write_enable;
 
     logic [63:0] mem_wb_alu_result;
     logic [63:0] mem_wb_mem_data;
@@ -48,6 +70,9 @@ module rv64_pipeline #(
     logic        mem_wb_mem_fault;
 
     logic        wb_we_internal;
+
+    // CSR architectural commit at WB.
+    logic        csr_commit_we;
 
     // MEM stage signals.
     logic [63:0] mem_read_data;
@@ -62,6 +87,18 @@ module rv64_pipeline #(
     logic [63:0] trap_cause;
     logic [63:0] trap_tval;
 
+    // Machine-mode CSR state.
+    logic [63:0] csr_mtvec;
+    logic [63:0] csr_mepc;
+    logic [63:0] csr_mcause;
+    logic [63:0] csr_mtval;
+    logic [63:0] csr_mstatus;
+    logic [63:0] csr_read_data;
+    logic [11:0] csr_read_addr;
+    logic [63:0] ex_csr_new_value;
+    logic [63:0] ex_csr_read_result;
+    logic        ex_csr_write_enable;
+
     exception_controller u_exception_controller (
         .reset                  (reset),
         .stall                  (stall),
@@ -72,11 +109,39 @@ module rv64_pipeline #(
         .mem_out_of_range_fault (mem_out_of_range_fault),
         .mem_pc                 (ex_mem_pc),
         .mem_address            (ex_mem_alu_result),
+        .mtvec                  (csr_mtvec),
         .trap_valid             (trap_valid),
         .trap_target            (trap_target),
         .trap_epc               (trap_epc),
         .trap_cause             (trap_cause),
         .trap_tval              (trap_tval)
+    );
+
+
+    // Machine-mode CSR register file.
+    // CSR instructions and MRET will be connected later.
+    csr_file u_csr_file (
+        .clk         (clk),
+        .reset       (reset),
+
+        .trap_valid  (trap_valid),
+        .trap_epc    (trap_epc),
+        .trap_cause  (trap_cause),
+        .trap_tval   (trap_tval),
+
+        .csr_we      (csr_commit_we),
+        .csr_raddr   (csr_read_addr),
+        .csr_waddr   (mem_wb_csr_addr),
+        .csr_wdata   (mem_wb_csr_new_value),
+        .csr_rdata   (csr_read_data),
+
+        .mret_valid  (1'b0),
+
+        .mtvec_o     (csr_mtvec),
+        .mepc_o      (csr_mepc),
+        .mcause_o    (csr_mcause),
+        .mtval_o     (csr_mtval),
+        .mstatus_o   (csr_mstatus)
     );
 
     fetch_decode_execute_path #(
@@ -94,6 +159,11 @@ module rv64_pipeline #(
         .wb_we               (wb_we),
         .wb_rd               (wb_rd),
         .wb_data             (wb_data),
+        .csr_read_data       (csr_read_data),
+        .csr_read_addr       (csr_read_addr),
+        .ex_csr_new_value    (ex_csr_new_value),
+        .ex_csr_read_result  (ex_csr_read_result),
+        .ex_csr_write_enable (ex_csr_write_enable),
 
         .mem_wb_valid        (mem_wb_valid),
         .mem_wb_reg_write    (mem_wb_reg_write && !mem_wb_mem_fault),
@@ -110,7 +180,14 @@ module rv64_pipeline #(
         .ex_mem_rs2_value  (ex_mem_rs2_value),
         .ex_mem_mem_to_reg   (ex_mem_mem_to_reg),
         .ex_mem_illegal_instr(ex_mem_illegal_instr),
-        .ex_mem_valid        (ex_mem_valid)
+        .ex_mem_valid        (ex_mem_valid),
+        .ex_mem_csr_valid    (ex_mem_csr_valid),
+        .ex_mem_csr_funct3   (ex_mem_csr_funct3),
+        .ex_mem_mret_valid   (ex_mem_mret_valid),
+        .ex_mem_csr_addr(ex_mem_csr_addr),
+        .ex_mem_csr_new_value(ex_mem_csr_new_value),
+        .ex_mem_csr_read_result(ex_mem_csr_read_result),
+        .ex_mem_csr_write_enable(ex_mem_csr_write_enable)
     );
 
     // MEM stage: 64-bit data memory.
@@ -146,6 +223,13 @@ module rv64_pipeline #(
         .illegal_instr_in  (ex_mem_illegal_instr),
         .mem_fault_in      (mem_access_fault),
         .valid_in          (ex_mem_valid),
+        .csr_valid_in      (ex_mem_csr_valid),
+        .csr_funct3_in     (ex_mem_csr_funct3),
+        .mret_valid_in     (ex_mem_mret_valid),
+        .csr_addr_in(ex_mem_csr_addr),
+        .csr_new_value_in(ex_mem_csr_new_value),
+        .csr_read_result_in(ex_mem_csr_read_result),
+        .csr_write_enable_in(ex_mem_csr_write_enable),
 
         .pc_out            (mem_wb_pc),
         .instr_out         (mem_wb_instr),
@@ -156,7 +240,14 @@ module rv64_pipeline #(
         .mem_to_reg_out    (mem_wb_mem_to_reg),
         .illegal_instr_out (mem_wb_illegal_instr),
         .mem_fault_out     (mem_wb_mem_fault),
-        .valid_out         (mem_wb_valid)
+        .valid_out         (mem_wb_valid),
+        .csr_valid_out     (mem_wb_csr_valid),
+        .csr_funct3_out    (mem_wb_csr_funct3),
+        .mret_valid_out    (mem_wb_mret_valid),
+        .csr_addr_out(mem_wb_csr_addr),
+        .csr_new_value_out(mem_wb_csr_new_value),
+        .csr_read_result_out(mem_wb_csr_read_result),
+        .csr_write_enable_out(mem_wb_csr_write_enable)
     );
 
     writeback_stage u_writeback (
@@ -181,7 +272,28 @@ module rv64_pipeline #(
     assign trap_cause_o = trap_cause;
     assign trap_tval_o  = trap_tval;
 
-    // Empêche toute écriture pendant reset ou flush.
+    // CSR observation outputs.
+    assign csr_mtvec_o   = csr_mtvec;
+    assign csr_mepc_o    = csr_mepc;
+    assign csr_mcause_o  = csr_mcause;
+    assign csr_mtval_o   = csr_mtval;
+    assign csr_mstatus_o = csr_mstatus;
+
+    // CSR commit: only valid, non-faulting instructions may write.
+    // Conservative trap gating; precise simultaneous WB/MEM retirement
+    // will be addressed in the subsequent exception-ordering step.
+    assign csr_commit_we =
+        mem_wb_valid
+        && mem_wb_csr_valid
+        && mem_wb_csr_write_enable
+        && !mem_wb_illegal_instr
+        && !mem_wb_mem_fault
+        && !reset
+        && !stall
+        && !flush
+        && !trap_valid;
+
+    // Empêche toute écriture GPR pendant reset ou flush.
     assign wb_we = wb_we_internal && !reset && !flush;
 
 
