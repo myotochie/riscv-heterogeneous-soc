@@ -258,6 +258,28 @@ module fetch_path #(
                 endcase
             end
 
+            18: begin
+                // CSR-to-ALU RAW hazard: no NOP between CSRRS and ADDI.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h305022F3; // CSRRS x5,mtvec,x0
+                    64'h80000004: instr_mem_data = 32'h00428313; // ADDI x6,x5,4
+                    64'h80000008: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+                    default: ;
+                endcase
+            end
+
+            19: begin
+                // CSR-to-ALU dependency with one intervening NOP.
+                // Intended to exercise the MEM/WB forwarding path.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h305022F3; // CSRRS x5,mtvec,x0
+                    64'h80000004: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000008: instr_mem_data = 32'h00428313; // ADDI x6,x5,4
+                    64'h8000000C: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+                    default: ;
+                endcase
+            end
+
             default: ;
         endcase
     end

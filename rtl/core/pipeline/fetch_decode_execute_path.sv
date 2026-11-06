@@ -122,6 +122,20 @@ module fetch_decode_execute_path #(
         .flush_id_ex   (hazard_flush_id_ex)
     );
 
+
+    // CSR-to-GPR forwarding.
+    // CSR instructions return the old CSR value to rd.
+    // ALU instructions return the ALU result.
+    logic [63:0] ex_mem_gpr_forward_data;
+
+    assign ex_mem_gpr_forward_data =
+        (ex_mem_valid
+         && ex_mem_csr_valid
+         && ex_mem_reg_write
+         && !ex_mem_illegal_instr)
+        ? ex_mem_csr_read_result
+        : ex_mem_alu_result;
+
     // Forwarding control
     logic [1:0] forward_a;
     logic [1:0] forward_b;
@@ -196,7 +210,7 @@ module fetch_decode_execute_path #(
         .rd_idx_in         (id_ex_rd_idx),
         .forward_a_in      (forward_a),
         .forward_b_in      (forward_b),
-        .ex_mem_forward_data_in (ex_mem_alu_result),
+        .ex_mem_forward_data_in (ex_mem_gpr_forward_data),
         .mem_wb_forward_data_in (wb_data),
         .alu_op_in         (id_ex_alu_op),
         .alu_src_in        (id_ex_alu_src),
