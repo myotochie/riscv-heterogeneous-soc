@@ -166,6 +166,7 @@ run_test fetch_decode_execute_path \
     rtl/core/execute/execute_stage.sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
     rtl/core/hazard/hazard_detection_unit.sv \
+    rtl/core/csr/csr_execute.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     verification/integration/tb_fetch_decode_execute_path.cpp
 
@@ -192,10 +193,13 @@ run_test rv64_pipeline \
     rtl/core/execute/execute_stage.sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
     rtl/core/hazard/hazard_detection_unit.sv \
+    rtl/core/csr/csr_execute.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     rtl/core/writeback/writeback_stage.sv \
     rtl/core/memory/data_memory.sv \
+    rtl/core/csr/csr_file.sv \
+    rtl/core/exception/exception_controller.sv \
     rtl/core/pipeline/rv64_pipeline.sv \
     verification/integration/tb_rv64_regfile.cpp
 echo
@@ -220,10 +224,13 @@ verilator --cc --exe --build --sv \
     rtl/core/execute/execute_stage.sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
     rtl/core/hazard/hazard_detection_unit.sv \
+    rtl/core/csr/csr_execute.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     rtl/core/writeback/writeback_stage.sv \
     rtl/core/memory/data_memory.sv \
+    rtl/core/csr/csr_file.sv \
+    rtl/core/exception/exception_controller.sv \
     rtl/core/pipeline/rv64_pipeline.sv \
     "$(pwd)/verification/integration/tb_rv64_raw_forwarding.cpp"
 
@@ -253,10 +260,13 @@ verilator --cc --exe --build --sv \
     rtl/core/execute/execute_stage.sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
     rtl/core/hazard/hazard_detection_unit.sv \
+    rtl/core/csr/csr_execute.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     rtl/core/writeback/writeback_stage.sv \
     rtl/core/memory/data_memory.sv \
+    rtl/core/csr/csr_file.sv \
+    rtl/core/exception/exception_controller.sv \
     rtl/core/pipeline/rv64_pipeline.sv \
     "$(pwd)/verification/integration/tb_rv64_forwarding_priority.cpp"
 
@@ -322,6 +332,7 @@ verilator --cc --exe --build --sv \
     rtl/core/execute/execute_stage.sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
     rtl/core/hazard/hazard_detection_unit.sv \
+    rtl/core/csr/csr_execute.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     "$(pwd)/verification/integration/tb_load_use_hazard.cpp"
 

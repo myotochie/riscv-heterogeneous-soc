@@ -23,6 +23,12 @@ module rv64_datapath (
 
     // Instruction decoding and control generation.
     decoder u_decoder (
+        // CSR/MRET outputs are unused by the legacy datapath.
+        .csr_valid  (),
+        .csr_funct3 (),
+        .mret_valid (),
+
+
         .uses_rs1(),
         .uses_rs2(),
         .instr        (instr),
