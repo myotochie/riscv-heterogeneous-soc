@@ -300,6 +300,69 @@ module fetch_path #(
                 endcase
             end
 
+            21: begin
+                // Trap handler, MRET and resumed execution.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h04100113; // ADDI x2,x0,65
+                    64'h0000000080000004: instr_mem_data = 32'h00800093; // ADDI x1,x0,8
+                    64'h0000000080000008: instr_mem_data = 32'h30009073; // CSRRW x0,mstatus,x1
+                    64'h000000008000000C: instr_mem_data = 32'h00013303; // LD x6,0(x2)
+                    64'h0000000080000010: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+                    64'h0000000080000014: instr_mem_data = 32'h00800413; // ADDI x8,x0,8
+                    64'h0000000080000100: instr_mem_data = 32'h341022F3; // CSRRS x5,mepc,x0
+                    64'h0000000080000104: instr_mem_data = 32'h00428293; // ADDI x5,x5,4
+                    64'h0000000080000108: instr_mem_data = 32'h34129073; // CSRRW x0,mepc,x5
+                    64'h000000008000010C: instr_mem_data = 32'h30200073; // MRET
+                    64'h0000000080000110: instr_mem_data = 32'h06300593; // ADDI x11,x0,99 (must flush)
+                    default: ;
+                endcase
+            end
+
+            22: begin
+                // Trap handler, MRET and resumed execution.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h04100113; // ADDI x2,x0,65
+                    64'h0000000080000004: instr_mem_data = 32'h00800093; // ADDI x1,x0,8
+                    64'h0000000080000008: instr_mem_data = 32'h30009073; // CSRRW x0,mstatus,x1
+                    64'h000000008000000C: instr_mem_data = 32'h00013303; // LD x6,0(x2)
+                    64'h0000000080000010: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+                    64'h0000000080000014: instr_mem_data = 32'h00800413; // ADDI x8,x0,8
+                    64'h0000000080000100: instr_mem_data = 32'h341022F3; // CSRRS x5,mepc,x0
+                    64'h0000000080000104: instr_mem_data = 32'h00428293; // ADDI x5,x5,4
+                    64'h0000000080000108: instr_mem_data = 32'h34129073; // CSRRW x0,mepc,x5
+                    64'h000000008000010C: instr_mem_data = 32'h30200073; // MRET
+                    64'h0000000080000110: instr_mem_data = 32'h00013583; // LD x11,0(x2), younger than MRET
+                    default: ;
+                endcase
+            end
+
+            23: begin
+                // MRET cancels younger SD into valid RAM.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h04100113; // x2 = invalid address 65
+                    64'h0000000080000004: instr_mem_data = 32'h00800093; // x1 = MIE
+                    64'h0000000080000008: instr_mem_data = 32'h30009073; // Enable MIE
+                    64'h000000008000000C: instr_mem_data = 32'h08000193; // x3 = RAM address 0x80
+                    64'h0000000080000010: instr_mem_data = 32'h02A00213; // x4 = sentinel 42
+                    64'h0000000080000014: instr_mem_data = 32'h00000013; // NOP
+                    64'h0000000080000018: instr_mem_data = 32'h00000013; // NOP
+                    64'h000000008000001C: instr_mem_data = 32'h0041B023; // SD x4,0(x3), initialize RAM
+                    64'h0000000080000020: instr_mem_data = 32'h06300213; // x4 = forbidden value 99
+                    64'h0000000080000024: instr_mem_data = 32'h00000013; // NOP
+                    64'h0000000080000028: instr_mem_data = 32'h00000013; // NOP
+                    64'h000000008000002C: instr_mem_data = 32'h00013303; // Faulting LD
+                    64'h0000000080000030: instr_mem_data = 32'h0001B603; // LD x12,0(x3), check RAM
+                    64'h0000000080000034: instr_mem_data = 32'h00700393; // Resume marker x7
+                    64'h0000000080000038: instr_mem_data = 32'h00800413; // Resume marker x8
+                    64'h0000000080000100: instr_mem_data = 32'h341022F3; // Read MEPC
+                    64'h0000000080000104: instr_mem_data = 32'h00428293; // Skip faulting instruction
+                    64'h0000000080000108: instr_mem_data = 32'h34129073; // Update MEPC
+                    64'h000000008000010C: instr_mem_data = 32'h30200073; // MRET
+                    64'h0000000080000110: instr_mem_data = 32'h0041B023; // Younger forbidden SD x4,0(x3)
+                    default: ;
+                endcase
+            end
+
             default: ;
         endcase
     end

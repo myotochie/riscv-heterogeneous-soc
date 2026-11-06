@@ -75,6 +75,13 @@ module rv64_pipeline #(
     logic        csr_commit_we;
     logic [63:0] trap_mtvec_effective;
 
+    // A retiring MRET is older than instructions in MEM/EX.
+    logic        mret_retire;
+    logic        trap_take;
+    logic        redirect_valid;
+    logic [63:0] redirect_target;
+
+
     // MEM stage signals.
     logic [63:0] mem_read_data;
     logic        mem_access_fault;
@@ -120,12 +127,12 @@ module rv64_pipeline #(
 
 
     // Machine-mode CSR register file.
-    // CSR instructions and MRET will be connected later.
+    // CSR retirement and architectural MRET connection.
     csr_file u_csr_file (
         .clk         (clk),
         .reset       (reset),
 
-        .trap_valid  (trap_valid),
+        .trap_valid  (trap_take),
         .trap_epc    (trap_epc),
         .trap_cause  (trap_cause),
         .trap_tval   (trap_tval),
@@ -136,7 +143,7 @@ module rv64_pipeline #(
         .csr_wdata   (mem_wb_csr_new_value),
         .csr_rdata   (csr_read_data),
 
-        .mret_valid  (1'b0),
+        .mret_valid  (mret_retire),
 
         .mtvec_o     (csr_mtvec),
         .mepc_o      (csr_mepc),
@@ -153,9 +160,9 @@ module rv64_pipeline #(
         .reset               (reset),
         .stall               (stall),
         .flush               (flush),
-        .trap_redirect    (trap_valid),
-        .trap_target      (trap_target),
-        .trap_flush_young (trap_valid),
+        .trap_redirect    (redirect_valid),
+        .trap_target      (redirect_target),
+        .trap_flush_young (redirect_valid),
 
         .wb_we               (wb_we),
         .wb_rd               (wb_rd),
@@ -200,8 +207,9 @@ module rv64_pipeline #(
     ) u_data_memory (
         .clk          (clk),
         .reset        (reset),
-        .mem_read     (ex_mem_valid && ex_mem_mem_read),
-        .mem_write    (ex_mem_valid && ex_mem_mem_write && !stall && !flush),
+        .mem_read     (ex_mem_valid && ex_mem_mem_read && !mret_retire),
+        .mem_write    (ex_mem_valid && ex_mem_mem_write
+                   && !stall && !flush && !mret_retire),
         .address      (ex_mem_alu_result),
         .write_data   (ex_mem_rs2_value),
         .read_data    (mem_read_data),
@@ -213,7 +221,7 @@ module rv64_pipeline #(
     pipeline_mem_wb u_mem_wb (
         .clk               (clk),
         .reset             (reset),
-        .flush             (flush || trap_valid),
+        .flush             (flush || redirect_valid),
         .stall             (stall),
 
         .pc_in             (ex_mem_pc),
@@ -272,8 +280,26 @@ module rv64_pipeline #(
         .wb_data           (wb_data)
     );
 
+    // Architectural retirement of MRET in WB.
+    assign mret_retire =
+        mem_wb_valid
+        && mem_wb_mret_valid
+        && !mem_wb_illegal_instr
+        && !mem_wb_mem_fault
+        && !reset
+        && !stall
+        && !flush;
+
+    // The WB MRET is older than the MEM fault.
+    assign trap_take = trap_valid && !mret_retire;
+
+    // Architectural PC redirect arbitration.
+    assign redirect_valid = mret_retire || trap_take;
+    assign redirect_target =
+        mret_retire ? csr_mepc : trap_target;
+
     // Combinational trap event observation.
-    assign trap_valid_o = trap_valid;
+    assign trap_valid_o = trap_take;
     assign trap_epc_o   = trap_epc;
     assign trap_cause_o = trap_cause;
     assign trap_tval_o  = trap_tval;
