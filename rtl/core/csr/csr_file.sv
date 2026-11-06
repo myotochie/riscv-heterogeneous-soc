@@ -61,6 +61,18 @@ module csr_file (
     end
 
     // Sequential architectural state.
+    //
+    // An older WB CSR instruction may retire on the same edge
+    // as a younger MEM instruction raises an exception.
+    //
+    // Ordering inside this process:
+    //   1. Older CSR retirement
+    //   2. Trap updates to overlapping architectural fields
+    //   3. MRET when no trap is present
+    //
+    // For overlapping nonblocking assignments, the later
+    // assignment wins.
+
     always_ff @(posedge clk) begin
         if (reset) begin
             mstatus_q <= 64'h0000_0000_0000_1800;
@@ -69,64 +81,73 @@ module csr_file (
             mcause_q  <= 64'b0;
             mtval_q   <= 64'b0;
 
-        end else if (trap_valid) begin
-            mepc_q   <= {trap_epc[63:2], 2'b00};
-            mcause_q <= trap_cause;
-            mtval_q  <= trap_tval;
+        end else begin
 
-            // MPIE <- MIE
-            mstatus_q[MSTATUS_MPIE] <=
-                mstatus_q[MSTATUS_MIE];
+            // Older instruction retires in WB.
+            if (csr_we) begin
+                case (csr_waddr)
+                    CSR_MSTATUS: begin
+                        mstatus_q[MSTATUS_MIE] <=
+                            csr_wdata[MSTATUS_MIE];
 
-            // MIE <- 0
-            mstatus_q[MSTATUS_MIE] <= 1'b0;
+                        mstatus_q[MSTATUS_MPIE] <=
+                            csr_wdata[MSTATUS_MPIE];
+                    end
 
-            // MPP <- Machine mode (11).
-            mstatus_q[MSTATUS_MPP_LSB +: 2] <= 2'b11;
+                    CSR_MTVEC: begin
+                        // Direct mode only, aligned BASE.
+                        mtvec_q <= {csr_wdata[63:2], 2'b00};
+                    end
 
-        end else if (mret_valid) begin
-            // MIE <- MPIE
-            mstatus_q[MSTATUS_MIE] <=
-                mstatus_q[MSTATUS_MPIE];
+                    CSR_MEPC: begin
+                        mepc_q <= {csr_wdata[63:2], 2'b00};
+                    end
 
-            // MPIE <- 1
-            mstatus_q[MSTATUS_MPIE] <= 1'b1;
+                    CSR_MCAUSE: begin
+                        mcause_q <= csr_wdata;
+                    end
 
-            // Machine-only implementation:
-            // retain MPP=M until lower privilege modes exist.
-            mstatus_q[MSTATUS_MPP_LSB +: 2] <= 2'b11;
+                    CSR_MTVAL: begin
+                        mtval_q <= csr_wdata;
+                    end
 
-        end else if (csr_we) begin
-            case (csr_waddr)
-                CSR_MSTATUS: begin
-                    mstatus_q[MSTATUS_MIE] <=
-                        csr_wdata[MSTATUS_MIE];
+                    default: begin
+                        // Unimplemented CSR: no effect.
+                    end
+                endcase
+            end
 
+            // Younger fault: trap updates take precedence
+            // over overlapping fields from the older CSR write.
+            if (trap_valid) begin
+                mepc_q   <= {trap_epc[63:2], 2'b00};
+                mcause_q <= trap_cause;
+                mtval_q  <= trap_tval;
+
+                // MPIE receives the architecturally latest MIE.
+                // When older WB writes mstatus on this edge,
+                // its value must be considered.
+                if (csr_we && csr_waddr == CSR_MSTATUS)
                     mstatus_q[MSTATUS_MPIE] <=
-                        csr_wdata[MSTATUS_MPIE];
-                end
+                        csr_wdata[MSTATUS_MIE];
+                else
+                    mstatus_q[MSTATUS_MPIE] <=
+                        mstatus_q[MSTATUS_MIE];
 
-                CSR_MTVEC: begin
-                    // Direct mode only; keep BASE aligned.
-                    mtvec_q <= {csr_wdata[63:2], 2'b00};
-                end
+                // Entering the trap disables interrupts.
+                mstatus_q[MSTATUS_MIE] <= 1'b0;
 
-                CSR_MEPC: begin
-                    mepc_q <= {csr_wdata[63:2], 2'b00};
-                end
+                // Machine-only implementation.
+                mstatus_q[MSTATUS_MPP_LSB +: 2] <= 2'b11;
 
-                CSR_MCAUSE: begin
-                    mcause_q <= csr_wdata;
-                end
+            end else if (mret_valid) begin
+                // MRET remains externally disconnected.
+                mstatus_q[MSTATUS_MIE] <=
+                    mstatus_q[MSTATUS_MPIE];
 
-                CSR_MTVAL: begin
-                    mtval_q <= csr_wdata;
-                end
-
-                default: begin
-                    // Unimplemented CSR: no state change.
-                end
-            endcase
+                mstatus_q[MSTATUS_MPIE] <= 1'b1;
+                mstatus_q[MSTATUS_MPP_LSB +: 2] <= 2'b11;
+            end
         end
     end
 

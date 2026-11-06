@@ -280,6 +280,26 @@ module fetch_path #(
                 endcase
             end
 
+            20: begin
+                // Precise trap: older CSR in WB, younger fault in MEM.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h20000093; // ADDI x1,x0,512
+                    64'h80000004: instr_mem_data = 32'h04100113; // ADDI x2,x0,65
+                    64'h80000008: instr_mem_data = 32'h00000013; // NOP
+                    64'h8000000C: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000010: instr_mem_data = 32'h30509073; // CSRRW x0,mtvec,x1
+                    64'h80000014: instr_mem_data = 32'h00013303; // LD x6,0(x2)
+                    64'h80000018: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+
+                    // New expected trap handler.
+                    64'h00000200: instr_mem_data = 32'h07B00513; // ADDI x10,x0,123
+
+                    // Old handler: useful for diagnosing stale mtvec.
+                    64'h80000100: instr_mem_data = 32'h05800593; // ADDI x11,x0,88
+                    default: ;
+                endcase
+            end
+
             default: ;
         endcase
     end

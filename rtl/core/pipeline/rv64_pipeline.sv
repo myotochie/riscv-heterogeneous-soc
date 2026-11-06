@@ -73,6 +73,7 @@ module rv64_pipeline #(
 
     // CSR architectural commit at WB.
     logic        csr_commit_we;
+    logic [63:0] trap_mtvec_effective;
 
     // MEM stage signals.
     logic [63:0] mem_read_data;
@@ -109,7 +110,7 @@ module rv64_pipeline #(
         .mem_out_of_range_fault (mem_out_of_range_fault),
         .mem_pc                 (ex_mem_pc),
         .mem_address            (ex_mem_alu_result),
-        .mtvec                  (csr_mtvec),
+        .mtvec                  (trap_mtvec_effective),
         .trap_valid             (trap_valid),
         .trap_target            (trap_target),
         .trap_epc               (trap_epc),
@@ -284,9 +285,15 @@ module rv64_pipeline #(
     assign csr_mtval_o   = csr_mtval;
     assign csr_mstatus_o = csr_mstatus;
 
+    // The trap target must use the architectural mtvec value
+    // after retirement of an older WB instruction.
+    // csr_commit_we is independent of trap_valid.
+    assign trap_mtvec_effective =
+        (csr_commit_we && mem_wb_csr_addr == 12'h305)
+        ? {mem_wb_csr_new_value[63:2], 2'b00}
+        : csr_mtvec;
+
     // CSR commit: only valid, non-faulting instructions may write.
-    // Conservative trap gating; precise simultaneous WB/MEM retirement
-    // will be addressed in the subsequent exception-ordering step.
     assign csr_commit_we =
         mem_wb_valid
         && mem_wb_csr_valid
@@ -295,8 +302,7 @@ module rv64_pipeline #(
         && !mem_wb_mem_fault
         && !reset
         && !stall
-        && !flush
-        && !trap_valid;
+        && !flush;
 
     // Empêche toute écriture GPR pendant reset ou flush.
     assign wb_we = wb_we_internal && !reset && !flush;
