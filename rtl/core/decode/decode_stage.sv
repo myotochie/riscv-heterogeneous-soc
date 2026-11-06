@@ -28,7 +28,10 @@ module decode_stage (
     output logic                  illegal_instr_out,
     output logic                  valid_out,
     output logic                  uses_rs1_out,
-    output logic                  uses_rs2_out
+    output logic                  uses_rs2_out,
+    output logic                  csr_valid_out,
+    output logic [2:0]            csr_funct3_out,
+    output logic                  mret_valid_out
 );
 
     logic [4:0]       rs1_idx;
@@ -45,6 +48,9 @@ module decode_stage (
     logic [63:0]      immediate;
     logic [63:0]      rs1_value;
     logic [63:0]      rs2_value;
+    logic             decoded_csr_valid;
+    logic [2:0]       decoded_csr_funct3;
+    logic             decoded_mret_valid;
 
     // 1. Décodage de l'instruction
     decoder u_decoder (
@@ -59,7 +65,10 @@ module decode_stage (
         .alu_src      (alu_src),
         .illegal_instr(decoded_illegal),
         .uses_rs1     (decoded_uses_rs1),
-        .uses_rs2     (decoded_uses_rs2)
+        .uses_rs2     (decoded_uses_rs2),
+        .csr_valid    (decoded_csr_valid),
+        .csr_funct3   (decoded_csr_funct3),
+        .mret_valid   (decoded_mret_valid)
     );
 
     // 2. Génération de l'immédiat
@@ -102,6 +111,11 @@ module decode_stage (
         valid_out         = valid_in;
         uses_rs1_out      = valid_in && decoded_uses_rs1;
         uses_rs2_out      = valid_in && decoded_uses_rs2;
+        csr_valid_out     = valid_in && decoded_csr_valid
+                            && !decoded_illegal;
+        csr_funct3_out    = decoded_csr_funct3;
+        mret_valid_out    = valid_in && decoded_mret_valid
+                            && !decoded_illegal;
     end
 
 endmodule

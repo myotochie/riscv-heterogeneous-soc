@@ -12,7 +12,9 @@ module data_memory #(
     input  logic [63:0] write_data,
 
     output logic [63:0] read_data,
-    output logic        access_fault
+    output logic        access_fault,
+    output logic        misaligned_fault,
+    output logic        out_of_range_fault
 );
 
     // Byte-addressable memory.
@@ -28,15 +30,30 @@ module data_memory #(
     localparam int unsigned ADDR_BITS = $clog2(MEM_SIZE_BYTES);
 
     logic address_valid;
+    logic address_aligned;
+    logic address_in_range;
     logic [ADDR_BITS-1:0] byte_index;
 
     // Only naturally aligned 64-bit accesses are supported.
     always_comb begin
-        address_valid =
-            (address[2:0] == 3'b000) &&
+        address_aligned = (address[2:0] == 3'b000);
+        address_in_range =
             (address <= (64'(MEM_SIZE_BYTES) - 64'd8));
 
+        address_valid = address_aligned && address_in_range;
+
         byte_index = address[ADDR_BITS-1:0];
+    end
+
+    // Classify memory address faults.
+    always_comb begin
+        misaligned_fault   = 1'b0;
+        out_of_range_fault = 1'b0;
+
+        if (mem_read || mem_write) begin
+            misaligned_fault   = !address_aligned;
+            out_of_range_fault = address_aligned && !address_in_range;
+        end
     end
 
     // Combinational 64-bit read, little-endian.

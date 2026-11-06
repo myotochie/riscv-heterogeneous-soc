@@ -7,6 +7,9 @@ module fetch_decode_path #(
     input  logic        stall,
     input  logic        flush,
 
+    input  logic        trap_redirect,
+    input  logic [63:0] trap_target,
+
     // Local hazard controls
     input  logic        hazard_stall_pc,
     input  logic        hazard_stall_if_id,
@@ -37,8 +40,19 @@ module fetch_decode_path #(
     output logic        id_ex_illegal_instr,
     output logic        id_ex_valid,
     output logic        dec_uses_rs1,
-    output logic        dec_uses_rs2
+    output logic        dec_uses_rs2,
+    output logic        id_ex_csr_valid,
+    output logic [2:0]  id_ex_csr_funct3,
+    output logic        id_ex_mret_valid
 );
+
+    // CSR control signals: ID -> ID/EX.
+    logic       dec_csr_valid;
+    logic [2:0] dec_csr_funct3;
+    logic       dec_mret_valid;
+
+    // Registered CSR controls are exposed as module outputs.
+
 
     logic effective_stall_pc;
     logic effective_stall_if_id;
@@ -72,6 +86,8 @@ module fetch_decode_path #(
         .stall_pc    (effective_stall_pc),
         .stall_if_id (effective_stall_if_id),
         .flush       (flush),
+        .trap_redirect (trap_redirect),
+        .trap_target   (trap_target),
         .pc_value    (pc_value),
         .if_id_pc    (if_id_pc),
         .if_id_instr (if_id_instr),
@@ -105,7 +121,10 @@ module fetch_decode_path #(
         .illegal_instr_out (dec_illegal_instr),
         .valid_out         (dec_valid),
         .uses_rs1_out      (dec_uses_rs1),
-        .uses_rs2_out      (dec_uses_rs2)
+        .uses_rs2_out      (dec_uses_rs2),
+        .csr_valid_out     (dec_csr_valid),
+        .csr_funct3_out    (dec_csr_funct3),
+        .mret_valid_out    (dec_mret_valid)
     );
 
     pipeline_id_ex u_id_ex (
@@ -144,7 +163,13 @@ module fetch_decode_path #(
         .mem_write_out     (id_ex_mem_write),
         .alu_src_out       (id_ex_alu_src),
         .illegal_instr_out (id_ex_illegal_instr),
-        .valid_out         (id_ex_valid)
+        .valid_out         (id_ex_valid),
+        .csr_valid_in      (dec_csr_valid),
+        .csr_funct3_in     (dec_csr_funct3),
+        .mret_valid_in     (dec_mret_valid),
+        .csr_valid_out     (id_ex_csr_valid),
+        .csr_funct3_out    (id_ex_csr_funct3),
+        .mret_valid_out    (id_ex_mret_valid)
     );
 
 endmodule

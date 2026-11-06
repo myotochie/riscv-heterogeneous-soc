@@ -8,6 +8,10 @@ module fetch_path #(
     input  logic        stall_if_id,
     input  logic        flush,
 
+    // Architectural PC redirection (trap/exception).
+    input  logic        trap_redirect,
+    input  logic [63:0] trap_target,
+
     output logic [63:0] pc_value,
     output logic [63:0] if_id_pc,
     output logic [31:0] if_id_instr,
@@ -86,6 +90,279 @@ module fetch_path #(
             end
 
 
+            6: begin
+                // Positive and negative LD/SD offset integration test.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h05000093; // ADDI x1,x0,80
+                    64'h80000004: instr_mem_data = 32'h02A00293; // ADDI x5,x0,42
+                    64'h80000008: instr_mem_data = 32'h0050B423; // SD x5,8(x1)
+                    64'h8000000C: instr_mem_data = 32'hFE50BC23; // SD x5,-8(x1)
+                    64'h80000010: instr_mem_data = 32'h0080B303; // LD x6,8(x1)
+                    64'h80000014: instr_mem_data = 32'hFF80B383; // LD x7,-8(x1)
+                    64'h80000018: instr_mem_data = 32'h00730433; // ADD x8,x6,x7
+                    default: ;
+                endcase
+            end
+
+            7: begin
+                // Full-width 64-bit LD -> SD -> LD integration test.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04000093; // ADDI x1,x0,64
+                    64'h80000004: instr_mem_data = 32'h0000B283; // LD x5,0(x1)
+                    64'h80000008: instr_mem_data = 32'h0050B423; // SD x5,8(x1)
+                    64'h8000000C: instr_mem_data = 32'h0080B303; // LD x6,8(x1)
+                    default: ;
+                endcase
+            end
+
+            8: begin
+                // Invalid unaligned LD must not update x5.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04100093; // ADDI x1,x0,65
+                    64'h80000004: instr_mem_data = 32'h06300293; // ADDI x5,x0,99
+                    64'h80000008: instr_mem_data = 32'h0000B283; // LD x5,0(x1)
+                    64'h8000000C: instr_mem_data = 32'h00700313; // ADDI x6,x0,7
+                    default: ;
+                endcase
+            end
+
+            9: begin
+                // Dependency immediately after an invalid LD.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04100093; // ADDI x1,x0,65
+                    64'h80000004: instr_mem_data = 32'h06300293; // ADDI x5,x0,99
+                    64'h80000008: instr_mem_data = 32'h0000B283; // LD x5,0(x1)
+                    64'h8000000C: instr_mem_data = 32'h00028333; // ADD x6,x5,x0
+                    64'h80000010: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+                    default: ;
+                endcase
+            end
+
+            10: begin
+                // Precise trap test: misaligned LD and trap handler.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04100093; // ADDI x1,x0,65
+                    64'h80000004: instr_mem_data = 32'h06300293; // ADDI x5,x0,99
+                    64'h80000008: instr_mem_data = 32'h0000B283; // LD x5,0(x1)
+                    64'h8000000C: instr_mem_data = 32'h02A00313; // ADDI x6,x0,42
+                    64'h80000010: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+
+                    // Exception handler.
+                    64'h80000100: instr_mem_data = 32'h07B00513; // ADDI x10,x0,123
+                    default: ;
+                endcase
+            end
+
+
+            11: begin
+                // Out-of-range memory access at address 0x1000.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h40000093; // ADDI x1,x0,1024
+                    64'h80000004: instr_mem_data = 32'h40008093; // ADDI x1,x1,1024
+                    64'h80000008: instr_mem_data = 32'h40008093; // ADDI x1,x1,1024
+                    64'h8000000C: instr_mem_data = 32'h40008093; // ADDI x1,x1,1024
+                    64'h80000010: instr_mem_data = 32'h06300293; // ADDI x5,x0,99
+                    64'h80000014: instr_mem_data = 32'h0000B303; // LD x6,0(x1)
+                    64'h80000018: instr_mem_data = 32'h02A00393; // ADDI x7,x0,42
+                    64'h8000001C: instr_mem_data = 32'h00800413; // ADDI x8,x0,8
+                    64'h80000100: instr_mem_data = 32'h07B00513; // ADDI x10,x0,123
+                    default: ;
+                endcase
+            end
+
+            12: begin
+                // Store address misaligned: address 0x41.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04100093; // ADDI x1,x0,65
+                    64'h80000004: instr_mem_data = 32'h06300293; // ADDI x5,x0,99
+                    64'h80000008: instr_mem_data = 32'h0050B023; // SD x5,0(x1)
+                    64'h8000000C: instr_mem_data = 32'h02A00393; // ADDI x7,x0,42
+                    64'h80000010: instr_mem_data = 32'h00800413; // ADDI x8,x0,8
+                    64'h80000100: instr_mem_data = 32'h07B00513; // ADDI x10,x0,123
+                    default: ;
+                endcase
+            end
+
+            13: begin
+                // Out-of-range memory access at address 0x1000.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h40000093; // ADDI x1,x0,1024
+                    64'h80000004: instr_mem_data = 32'h40008093; // ADDI x1,x1,1024
+                    64'h80000008: instr_mem_data = 32'h40008093; // ADDI x1,x1,1024
+                    64'h8000000C: instr_mem_data = 32'h40008093; // ADDI x1,x1,1024
+                    64'h80000010: instr_mem_data = 32'h06300293; // ADDI x5,x0,99
+                    64'h80000014: instr_mem_data = 32'h0050B023; // SD x5,0(x1)
+                    64'h80000018: instr_mem_data = 32'h02A00393; // ADDI x7,x0,42
+                    64'h8000001C: instr_mem_data = 32'h00800413; // ADDI x8,x0,8
+                    64'h80000100: instr_mem_data = 32'h07B00513; // ADDI x10,x0,123
+                    default: ;
+                endcase
+            end
+
+            14: begin
+                // CSR architectural commit integration.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h20000093; // ADDI x1,x0,512
+                    64'h80000004: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000008: instr_mem_data = 32'h00000013; // NOP
+                    64'h8000000C: instr_mem_data = 32'h30509073; // CSRRW x0,mtvec,x1
+                    64'h80000010: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000014: instr_mem_data = 32'h00000013; // NOP
+                    default: ;
+                endcase
+            end
+
+            15: begin
+                // CSRRW returns the old mtvec in x5 and writes x1.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h20000093; // ADDI x1,x0,512
+                    64'h80000004: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000008: instr_mem_data = 32'h00000013; // NOP
+                    64'h8000000C: instr_mem_data = 32'h305092F3; // CSRRW x5,mtvec,x1
+                    64'h80000010: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000014: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000018: instr_mem_data = 32'h00000013; // NOP
+                    64'h8000001C: instr_mem_data = 32'h00700313; // ADDI x6,x0,7
+                    default: ;
+                endcase
+            end
+
+            16: begin
+                // Back-to-back CSR RAW dependency test.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h20000093; // ADDI x1,x0,512
+                    64'h80000004: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000008: instr_mem_data = 32'h00000013; // NOP
+                    64'h8000000C: instr_mem_data = 32'h305092F3; // CSRRW x5,mtvec,x1
+                    64'h80000010: instr_mem_data = 32'h30502373; // CSRRS x6,mtvec,x0
+                    64'h80000014: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000018: instr_mem_data = 32'h00000013; // NOP
+                    64'h8000001C: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+                    default: ;
+                endcase
+            end
+
+            17: begin
+                // CSR forwarding priority: EX/MEM over MEM/WB.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h10000093; // ADDI x1,x0,256
+                    64'h80000004: instr_mem_data = 32'h20000113; // ADDI x2,x0,512
+                    64'h80000008: instr_mem_data = 32'h00000013; // NOP
+                    64'h8000000C: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000010: instr_mem_data = 32'h30509073; // CSRRW x0,mtvec,x1
+                    64'h80000014: instr_mem_data = 32'h30511073; // CSRRW x0,mtvec,x2
+                    64'h80000018: instr_mem_data = 32'h30502373; // CSRRS x6,mtvec,x0
+                    64'h8000001C: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000020: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+                    default: ;
+                endcase
+            end
+
+            18: begin
+                // CSR-to-ALU RAW hazard: no NOP between CSRRS and ADDI.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h305022F3; // CSRRS x5,mtvec,x0
+                    64'h80000004: instr_mem_data = 32'h00428313; // ADDI x6,x5,4
+                    64'h80000008: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+                    default: ;
+                endcase
+            end
+
+            19: begin
+                // CSR-to-ALU dependency with one intervening NOP.
+                // Intended to exercise the MEM/WB forwarding path.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h305022F3; // CSRRS x5,mtvec,x0
+                    64'h80000004: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000008: instr_mem_data = 32'h00428313; // ADDI x6,x5,4
+                    64'h8000000C: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+                    default: ;
+                endcase
+            end
+
+            20: begin
+                // Precise trap: older CSR in WB, younger fault in MEM.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h20000093; // ADDI x1,x0,512
+                    64'h80000004: instr_mem_data = 32'h04100113; // ADDI x2,x0,65
+                    64'h80000008: instr_mem_data = 32'h00000013; // NOP
+                    64'h8000000C: instr_mem_data = 32'h00000013; // NOP
+                    64'h80000010: instr_mem_data = 32'h30509073; // CSRRW x0,mtvec,x1
+                    64'h80000014: instr_mem_data = 32'h00013303; // LD x6,0(x2)
+                    64'h80000018: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+
+                    // New expected trap handler.
+                    64'h00000200: instr_mem_data = 32'h07B00513; // ADDI x10,x0,123
+
+                    // Old handler: useful for diagnosing stale mtvec.
+                    64'h80000100: instr_mem_data = 32'h05800593; // ADDI x11,x0,88
+                    default: ;
+                endcase
+            end
+
+            21: begin
+                // Trap handler, MRET and resumed execution.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h04100113; // ADDI x2,x0,65
+                    64'h0000000080000004: instr_mem_data = 32'h00800093; // ADDI x1,x0,8
+                    64'h0000000080000008: instr_mem_data = 32'h30009073; // CSRRW x0,mstatus,x1
+                    64'h000000008000000C: instr_mem_data = 32'h00013303; // LD x6,0(x2)
+                    64'h0000000080000010: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+                    64'h0000000080000014: instr_mem_data = 32'h00800413; // ADDI x8,x0,8
+                    64'h0000000080000100: instr_mem_data = 32'h341022F3; // CSRRS x5,mepc,x0
+                    64'h0000000080000104: instr_mem_data = 32'h00428293; // ADDI x5,x5,4
+                    64'h0000000080000108: instr_mem_data = 32'h34129073; // CSRRW x0,mepc,x5
+                    64'h000000008000010C: instr_mem_data = 32'h30200073; // MRET
+                    64'h0000000080000110: instr_mem_data = 32'h06300593; // ADDI x11,x0,99 (must flush)
+                    default: ;
+                endcase
+            end
+
+            22: begin
+                // Trap handler, MRET and resumed execution.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h04100113; // ADDI x2,x0,65
+                    64'h0000000080000004: instr_mem_data = 32'h00800093; // ADDI x1,x0,8
+                    64'h0000000080000008: instr_mem_data = 32'h30009073; // CSRRW x0,mstatus,x1
+                    64'h000000008000000C: instr_mem_data = 32'h00013303; // LD x6,0(x2)
+                    64'h0000000080000010: instr_mem_data = 32'h00700393; // ADDI x7,x0,7
+                    64'h0000000080000014: instr_mem_data = 32'h00800413; // ADDI x8,x0,8
+                    64'h0000000080000100: instr_mem_data = 32'h341022F3; // CSRRS x5,mepc,x0
+                    64'h0000000080000104: instr_mem_data = 32'h00428293; // ADDI x5,x5,4
+                    64'h0000000080000108: instr_mem_data = 32'h34129073; // CSRRW x0,mepc,x5
+                    64'h000000008000010C: instr_mem_data = 32'h30200073; // MRET
+                    64'h0000000080000110: instr_mem_data = 32'h00013583; // LD x11,0(x2), younger than MRET
+                    default: ;
+                endcase
+            end
+
+            23: begin
+                // MRET cancels younger SD into valid RAM.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h04100113; // x2 = invalid address 65
+                    64'h0000000080000004: instr_mem_data = 32'h00800093; // x1 = MIE
+                    64'h0000000080000008: instr_mem_data = 32'h30009073; // Enable MIE
+                    64'h000000008000000C: instr_mem_data = 32'h08000193; // x3 = RAM address 0x80
+                    64'h0000000080000010: instr_mem_data = 32'h02A00213; // x4 = sentinel 42
+                    64'h0000000080000014: instr_mem_data = 32'h00000013; // NOP
+                    64'h0000000080000018: instr_mem_data = 32'h00000013; // NOP
+                    64'h000000008000001C: instr_mem_data = 32'h0041B023; // SD x4,0(x3), initialize RAM
+                    64'h0000000080000020: instr_mem_data = 32'h06300213; // x4 = forbidden value 99
+                    64'h0000000080000024: instr_mem_data = 32'h00000013; // NOP
+                    64'h0000000080000028: instr_mem_data = 32'h00000013; // NOP
+                    64'h000000008000002C: instr_mem_data = 32'h00013303; // Faulting LD
+                    64'h0000000080000030: instr_mem_data = 32'h0001B603; // LD x12,0(x3), check RAM
+                    64'h0000000080000034: instr_mem_data = 32'h00700393; // Resume marker x7
+                    64'h0000000080000038: instr_mem_data = 32'h00800413; // Resume marker x8
+                    64'h0000000080000100: instr_mem_data = 32'h341022F3; // Read MEPC
+                    64'h0000000080000104: instr_mem_data = 32'h00428293; // Skip faulting instruction
+                    64'h0000000080000108: instr_mem_data = 32'h34129073; // Update MEPC
+                    64'h000000008000010C: instr_mem_data = 32'h30200073; // MRET
+                    64'h0000000080000110: instr_mem_data = 32'h0041B023; // Younger forbidden SD x4,0(x3)
+                    default: ;
+                endcase
+            end
+
             default: ;
         endcase
     end
@@ -95,8 +372,8 @@ pc u_pc (
     .clk             (clk),
     .reset           (reset),
     .stall            (stall_pc),
-    .redirect        (1'b0),
-    .redirect_target (64'b0),
+    .redirect        (trap_redirect),
+    .redirect_target (trap_target),
     .pc_value        (pc_value)
 );	
     // Instruction Fetch / Instruction Decode register.
