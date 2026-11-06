@@ -16,6 +16,9 @@ module fetch_decode_execute_path #(
     input  logic [63:0] wb_data,
 
     input  logic [63:0] csr_read_data,
+    input  logic [11:0] mem_wb_csr_addr,
+    input  logic [63:0] mem_wb_csr_new_value,
+    input  logic        mem_wb_csr_write_pending,
 
     // Informations MEM/WB pour le forwarding
     input  logic        mem_wb_valid,
@@ -201,6 +204,7 @@ module fetch_decode_execute_path #(
         .mem_write_in    (id_ex_mem_write),
         .reg_write_in      (id_ex_reg_write),
         .illegal_instr_in  (id_ex_illegal_instr),
+          .csr_valid_in     (id_ex_csr_valid),
         .valid_in          (id_ex_valid),
         .pc_out            (ex_pc),
         .instr_out         (ex_instr),
@@ -219,11 +223,29 @@ module fetch_decode_execute_path #(
     // Combinational CSR read address for the EX-stage instruction.
     assign csr_read_addr = id_ex_instr[31:20];
 
+    // CSR RAW forwarding:
+    // EX/MEM is newer than MEM/WB.
+    // Both paths bypass writes that have not yet reached csr_file.
+    logic [63:0] csr_old_value_effective;
+
+    assign csr_old_value_effective =
+        (ex_mem_valid
+         && ex_mem_csr_valid
+         && ex_mem_csr_write_enable
+         && !ex_mem_illegal_instr
+         && (ex_mem_csr_addr == csr_read_addr))
+        ? ex_mem_csr_new_value
+        : ((mem_wb_csr_write_pending
+            && (mem_wb_csr_addr == csr_read_addr))
+           ? mem_wb_csr_new_value
+           : csr_read_data);
+
+
     csr_execute u_csr_execute (
         .funct3            (id_ex_csr_funct3),
         .rs1_idx           (id_ex_rs1_idx),
         .rs1_value         (ex_forwarded_rs1),
-        .csr_old_value     (csr_read_data),
+        .csr_old_value     (csr_old_value_effective),
         .csr_new_value     (csr_new_value_raw),
         .csr_write_enable  (csr_write_enable_raw),
         .csr_read_result   (csr_read_result_raw)

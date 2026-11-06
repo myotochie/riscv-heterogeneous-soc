@@ -19,6 +19,7 @@ module execute_stage #(
     input  logic              mem_read_in,
     input  logic              mem_write_in,
     input  logic              illegal_instr_in,
+    input  logic              csr_valid_in,
     input  logic              valid_in,
 
     output logic [63:0]       pc_out,
@@ -84,12 +85,10 @@ module execute_stage #(
         rs2_value_out     = forwarded_rs2;
         rd_idx_out        = rd_idx_in;
 
-        // Temporary safety guard:
-        // CSR instructions must not write an ALU result into a GPR
-        // until the architectural CSR result path is implemented.
-        reg_write_out     = valid_in && reg_write_in
-                            && !illegal_instr_in
-                            && !(instr_in[6:0] == 7'b1110011);
+        // A valid CSR instruction writes its old CSR value to rd.
+        // The WB stage selects csr_read_result instead of ALU data.
+        reg_write_out     = valid_in && !illegal_instr_in
+                            && (reg_write_in || csr_valid_in);
 
         mem_read_out      = valid_in && mem_read_in
                             && !illegal_instr_in;
