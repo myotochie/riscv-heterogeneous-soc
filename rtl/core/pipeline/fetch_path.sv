@@ -363,6 +363,168 @@ module fetch_path #(
                 endcase
             end
 
+            24: begin
+                // BEQ taken: squash x3, execute x4 and x5.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h00500093; // x1=5
+                    64'h80000004: instr_mem_data = 32'h00500113; // x2=5
+                    64'h80000008: instr_mem_data = 32'h00208463; // BEQ x1,x2,+8
+                    64'h8000000C: instr_mem_data = 32'h06300193; // x3=99, squash
+                    64'h80000010: instr_mem_data = 32'h00700213; // x4=7
+                    64'h80000014: instr_mem_data = 32'h00800293; // x5=8
+                    default: ;
+                endcase
+            end
+
+            25: begin
+                // BEQ not taken: x3, x4 and x5 must all execute.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h00500093; // x1=5
+                    64'h80000004: instr_mem_data = 32'h00600113; // x2=6
+                    64'h80000008: instr_mem_data = 32'h00208463; // BEQ x1,x2,+8
+                    64'h8000000C: instr_mem_data = 32'h06300193; // x3=99
+                    64'h80000010: instr_mem_data = 32'h00700213; // x4=7
+                    64'h80000014: instr_mem_data = 32'h00800293; // x5=8
+                    default: ;
+                endcase
+            end
+
+            26: begin
+                // CF-02: BNE taken, squash x3. Preserve x4/x5.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h00500093;
+                    64'h0000000080000004: instr_mem_data = 32'h00600113;
+                    64'h0000000080000008: instr_mem_data = 32'h00209463;
+                    64'h000000008000000C: instr_mem_data = 32'h06300193;
+                    64'h0000000080000010: instr_mem_data = 32'h00700213;
+                    64'h0000000080000014: instr_mem_data = 32'h00800293;
+                    default: ;
+                endcase
+            end
+
+            27: begin
+                // CF-02: BLT taken, squash x3. Preserve x4/x5.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'hFFF00093;
+                    64'h0000000080000004: instr_mem_data = 32'h00100113;
+                    64'h0000000080000008: instr_mem_data = 32'h0020C463;
+                    64'h000000008000000C: instr_mem_data = 32'h06300193;
+                    64'h0000000080000010: instr_mem_data = 32'h00700213;
+                    64'h0000000080000014: instr_mem_data = 32'h00800293;
+                    default: ;
+                endcase
+            end
+
+            28: begin
+                // CF-02: BGE taken, squash x3. Preserve x4/x5.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h00100093;
+                    64'h0000000080000004: instr_mem_data = 32'hFFF00113;
+                    64'h0000000080000008: instr_mem_data = 32'h0020D463;
+                    64'h000000008000000C: instr_mem_data = 32'h06300193;
+                    64'h0000000080000010: instr_mem_data = 32'h00700213;
+                    64'h0000000080000014: instr_mem_data = 32'h00800293;
+                    default: ;
+                endcase
+            end
+
+            29: begin
+                // CF-02: BLTU taken, squash x3. Preserve x4/x5.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h00100093;
+                    64'h0000000080000004: instr_mem_data = 32'hFFF00113;
+                    64'h0000000080000008: instr_mem_data = 32'h0020E463;
+                    64'h000000008000000C: instr_mem_data = 32'h06300193;
+                    64'h0000000080000010: instr_mem_data = 32'h00700213;
+                    64'h0000000080000014: instr_mem_data = 32'h00800293;
+                    default: ;
+                endcase
+            end
+
+            30: begin
+                // CF-02: BGEU taken, squash x3. Preserve x4/x5.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'hFFF00093;
+                    64'h0000000080000004: instr_mem_data = 32'h00100113;
+                    64'h0000000080000008: instr_mem_data = 32'h0020F463;
+                    64'h000000008000000C: instr_mem_data = 32'h06300193;
+                    64'h0000000080000010: instr_mem_data = 32'h00700213;
+                    64'h0000000080000014: instr_mem_data = 32'h00800293;
+                    default: ;
+                endcase
+            end
+
+            31: begin
+                // CF-02: backward BLT loop, x1 reaches 3.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h00000093;
+                    64'h0000000080000004: instr_mem_data = 32'h00300113;
+                    64'h0000000080000008: instr_mem_data = 32'h00108093;
+                    64'h000000008000000C: instr_mem_data = 32'hFE20CEE3;
+                    64'h0000000080000010: instr_mem_data = 32'h06300193;
+                    64'h0000000080000014: instr_mem_data = 32'h00700213;
+                    default: ;
+                endcase
+            end
+            32: begin
+                // CF-02: branch dependency integration test.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h00500093;
+                    64'h0000000080000004: instr_mem_data = 32'h00600113;
+                    64'h0000000080000008: instr_mem_data = 32'h00108093;
+                    64'h000000008000000C: instr_mem_data = 32'h00208463;
+                    64'h0000000080000010: instr_mem_data = 32'h06300193;
+                    64'h0000000080000014: instr_mem_data = 32'h00700213;
+                    default: ;
+                endcase
+            end
+
+            33: begin
+                // CF-02: branch dependency integration test.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h08000093;
+                    64'h0000000080000004: instr_mem_data = 32'h00700113;
+                    64'h0000000080000008: instr_mem_data = 32'h0020B023;
+                    64'h000000008000000C: instr_mem_data = 32'h0000B283;
+                    64'h0000000080000010: instr_mem_data = 32'h00228463;
+                    64'h0000000080000014: instr_mem_data = 32'h06300193;
+                    64'h0000000080000018: instr_mem_data = 32'h00700213;
+                    default: ;
+                endcase
+            end
+            34: begin
+                // MEM trap beats EX BEQ.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h04100093;
+                    64'h0000000080000004: instr_mem_data = 32'h00500113;
+                    64'h0000000080000008: instr_mem_data = 32'h0000B303;
+                    64'h000000008000000C: instr_mem_data = 32'h00000463;
+                    64'h0000000080000010: instr_mem_data = 32'h06300393;
+                    64'h0000000080000014: instr_mem_data = 32'h05800413;
+                    64'h0000000080000100: instr_mem_data = 32'h07B00513;
+                    default: ;
+                endcase
+            end
+
+            35: begin
+                // WB MRET beats EX BEQ.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h04100093;
+                    64'h0000000080000004: instr_mem_data = 32'h0000B303;
+                    64'h0000000080000008: instr_mem_data = 32'h00700393;
+                    64'h000000008000000C: instr_mem_data = 32'h00800413;
+                    64'h0000000080000100: instr_mem_data = 32'h341022F3;
+                    64'h0000000080000104: instr_mem_data = 32'h00428293;
+                    64'h0000000080000108: instr_mem_data = 32'h34129073;
+                    64'h000000008000010C: instr_mem_data = 32'h30200073;
+                    64'h0000000080000110: instr_mem_data = 32'h00000013;
+                    64'h0000000080000114: instr_mem_data = 32'h00000463;
+                    64'h0000000080000118: instr_mem_data = 32'h06300593;
+                    64'h000000008000011C: instr_mem_data = 32'h05800613;
+                    default: ;
+                endcase
+            end
+
             default: ;
         endcase
     end

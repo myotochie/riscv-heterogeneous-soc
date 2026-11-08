@@ -167,6 +167,8 @@ run_test fetch_decode_execute_path \
     rtl/core/pipeline/pipeline_ex_mem.sv \
     rtl/core/hazard/hazard_detection_unit.sv \
     rtl/core/csr/csr_execute.sv \
+    rtl/core/control/branch_decision.sv \
+    rtl/core/control/branch_target.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     verification/integration/tb_fetch_decode_execute_path.cpp
 
@@ -194,6 +196,8 @@ run_test rv64_pipeline \
     rtl/core/pipeline/pipeline_ex_mem.sv \
     rtl/core/hazard/hazard_detection_unit.sv \
     rtl/core/csr/csr_execute.sv \
+    rtl/core/control/branch_decision.sv \
+    rtl/core/control/branch_target.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     rtl/core/writeback/writeback_stage.sv \
@@ -225,6 +229,8 @@ verilator --cc --exe --build --sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
     rtl/core/hazard/hazard_detection_unit.sv \
     rtl/core/csr/csr_execute.sv \
+    rtl/core/control/branch_decision.sv \
+    rtl/core/control/branch_target.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     rtl/core/writeback/writeback_stage.sv \
@@ -261,6 +267,8 @@ verilator --cc --exe --build --sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
     rtl/core/hazard/hazard_detection_unit.sv \
     rtl/core/csr/csr_execute.sv \
+    rtl/core/control/branch_decision.sv \
+    rtl/core/control/branch_target.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     rtl/core/pipeline/pipeline_mem_wb.sv \
     rtl/core/writeback/writeback_stage.sv \
@@ -333,6 +341,8 @@ verilator --cc --exe --build --sv \
     rtl/core/pipeline/pipeline_ex_mem.sv \
     rtl/core/hazard/hazard_detection_unit.sv \
     rtl/core/csr/csr_execute.sv \
+    rtl/core/control/branch_decision.sv \
+    rtl/core/control/branch_target.sv \
     rtl/core/pipeline/fetch_decode_execute_path.sv \
     "$(pwd)/verification/integration/tb_load_use_hazard.cpp"
 

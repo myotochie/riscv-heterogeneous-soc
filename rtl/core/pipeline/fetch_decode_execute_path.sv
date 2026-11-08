@@ -95,6 +95,12 @@ module fetch_decode_execute_path #(
     logic ex_csr_valid;
     logic [2:0] ex_csr_funct3;
     logic ex_mret_valid;
+
+    // CF-02: conditional branches resolved in EX.
+    logic ex_branch_taken;
+    logic ex_branch_illegal;
+    logic ex_branch_redirect;
+    logic [63:0] ex_branch_target;
     logic unused_ex_mem_read;
     logic unused_ex_mem_to_reg;
 
@@ -164,9 +170,9 @@ module fetch_decode_execute_path #(
         .clk                 (clk),
         .reset               (reset),
         .stall               (stall),
-        .flush               (flush || trap_flush_young),
-        .trap_redirect (trap_redirect),
-        .trap_target   (trap_target),
+        .flush               (flush || trap_flush_young || ex_branch_redirect),
+        .trap_redirect (trap_redirect || ex_branch_redirect),
+        .trap_target   (trap_redirect ? trap_target : ex_branch_target),
         .hazard_stall_pc     (hazard_stall_pc),
         .hazard_stall_if_id  (hazard_stall_if_id),
         .hazard_flush_id_ex  (hazard_flush_id_ex),
@@ -278,6 +284,38 @@ module fetch_decode_execute_path #(
     assign ex_csr_funct3 = id_ex_csr_funct3;
     assign ex_mret_valid = ex_valid && id_ex_mret_valid
                            && !ex_illegal_instr;
+
+    // Compare the forwarded operands, not stale ID-stage values.
+    branch_decision u_ex_branch_decision (
+        .funct3          (id_ex_instr[14:12]),
+        .rs1_value       (ex_forwarded_rs1),
+        .rs2_value       (ex_rs2_value),
+        .is_branch       (id_ex_valid &&
+                          id_ex_instr[6:0] == 7'b1100011 &&
+                          !id_ex_illegal_instr),
+        .is_jal          (1'b0),
+        .is_jalr         (1'b0),
+        .branch_taken    (ex_branch_taken),
+        .illegal_control (ex_branch_illegal)
+    );
+
+    branch_target u_ex_branch_target (
+        .pc          (id_ex_pc),
+        .instr       (id_ex_instr),
+        .rs1_value   (ex_forwarded_rs1),
+        .target_kind (2'b00),
+        .target      (ex_branch_target)
+    );
+
+    // A branch in EX is younger than WB MRET and MEM traps.
+    // External stall/flush must also suppress the redirect.
+    assign ex_branch_redirect =
+        ex_branch_taken &&
+        !ex_branch_illegal &&
+        !stall &&
+        !flush &&
+        !trap_redirect &&
+        !trap_flush_young;
 
     pipeline_ex_mem u_ex_mem (
         .clk               (clk),
