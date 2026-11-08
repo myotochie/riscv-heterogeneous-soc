@@ -155,6 +155,27 @@ module decoder (
             illegal_instr = 1'b0;
         end
 
+        // RV64I conditional branches (B-type).
+        // Actual PC redirection will be integrated in CF-02.
+        if (opcode == 7'b1100011) begin
+            case (funct3)
+                3'b000, // BEQ
+                3'b001, // BNE
+                3'b100, // BLT
+                3'b101, // BGE
+                3'b110, // BLTU
+                3'b111: begin // BGEU
+                    reg_write     = 1'b0;
+                    mem_read      = 1'b0;
+                    mem_write     = 1'b0;
+                    illegal_instr = 1'b0;
+                end
+                default: begin
+                    // Reserved branch funct3 values remain illegal.
+                end
+            endcase
+        end
+
         // SYSTEM opcode: CSR operations and MRET.
         if (opcode == 7'b1110011) begin
             if (instr == 32'h30200073) begin
@@ -180,7 +201,8 @@ module decoder (
             uses_rs1 = (opcode != 7'b1110011) ||
                        (csr_valid && !funct3[2]);
             uses_rs2 = (opcode == 7'b0110011 ||
-                        opcode == 7'b0100011);
+                        opcode == 7'b0100011 ||
+                        opcode == 7'b1100011);
         end
     end
 
