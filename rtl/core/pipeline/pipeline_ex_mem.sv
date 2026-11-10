@@ -17,6 +17,8 @@ module pipeline_ex_mem (
     input  logic        mem_to_reg_in,
     input  logic        illegal_instr_in,
     input  logic        valid_in,
+    input  logic        target_misaligned_in,
+    input  logic [63:0] control_target_in,
     input  logic        csr_valid_in,
     input  logic [2:0]  csr_funct3_in,
     input  logic        mret_valid_in,
@@ -37,6 +39,8 @@ module pipeline_ex_mem (
     output logic        mem_to_reg_out,
     output logic        illegal_instr_out,
     output logic        valid_out,
+    output logic        target_misaligned_out,
+    output logic [63:0] control_target_out,
     output logic        csr_valid_out,
     output logic [2:0]  csr_funct3_out,
     output logic        mret_valid_out,
@@ -60,6 +64,8 @@ module pipeline_ex_mem (
             mem_to_reg_out    <= 1'b0;
             illegal_instr_out <= 1'b0;
             valid_out         <= 1'b0;
+            target_misaligned_out <= 1'b0;
+            control_target_out <= 64'b0;
             csr_valid_out     <= 1'b0;
             csr_funct3_out    <= 3'b000;
             mret_valid_out    <= 1'b0;
@@ -88,6 +94,8 @@ module pipeline_ex_mem (
             mem_to_reg_out    <= valid_in && mem_to_reg_in;
             illegal_instr_out <= valid_in && illegal_instr_in;
             valid_out         <= valid_in;
+            target_misaligned_out <= valid_in && target_misaligned_in;
+            control_target_out <= control_target_in;
             csr_valid_out     <= valid_in && csr_valid_in;
             csr_funct3_out    <= csr_funct3_in;
             mret_valid_out    <= valid_in && mret_valid_in;

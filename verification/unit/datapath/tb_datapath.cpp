@@ -104,6 +104,35 @@ int main(int argc, char** argv) {
         dut, encode_i_type(0, 0, 0, 6),
         0, false, "x0 remains zero");
 
+    // Instructions supported by the pipelined core must remain illegal here.
+    // Initialize and then read back x1 after every rejected write candidate.
+    const uint32_t rejected[] = {
+        0x000000efu, // JAL x1,0
+        0x000000e7u, // JALR x1,x0,0
+        0x00003083u, // LD x1,0(x0)
+        0x305010f3u, // CSRRW x1,mtvec,x0
+        0x00000063u, // BEQ x0,x0,0
+        0x30200073u  // MRET
+    };
+    for (uint32_t instr : rejected) {
+        // The combinational ALU output is unspecified for an illegal opcode;
+        // test legality and architectural preservation, not that unused value.
+        dut.clk = 0;
+        dut.instr = instr;
+        dut.eval();
+        ++tests_run;
+        if (!dut.illegal_instr) {
+            ++tests_failed;
+            std::cout << "[FAIL] Reject instruction outside legacy subset\n";
+        } else {
+            std::cout << "[PASS] Reject instruction outside legacy subset\n";
+        }
+        dut.clk = 1; dut.eval();
+        dut.clk = 0; dut.eval();
+        check_result(dut, encode_i_type(0, 1, 0, 5), 42, false,
+                     "Rejected instruction preserves x1");
+    }
+
     std::cout << "\nTests run: " << tests_run
               << "\nTests failed: " << tests_failed << '\n';
 

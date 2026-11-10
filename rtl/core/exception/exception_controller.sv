@@ -4,6 +4,8 @@ module exception_controller (
 
     input logic [63:0] mtvec,
     input  logic        mem_valid,
+    input  logic        mem_target_misaligned,
+    input  logic [63:0] mem_control_target,
     input  logic        mem_read,
     input  logic        mem_write,
     input  logic        mem_misaligned_fault,
@@ -27,9 +29,14 @@ module exception_controller (
         trap_cause  = 64'b0;
         trap_tval   = 64'b0;
 
-        if (!reset && !stall && mem_valid &&
-            (mem_read || mem_write) &&
-            (mem_misaligned_fault || mem_out_of_range_fault)) begin
+        if (!reset && !stall && mem_valid && mem_target_misaligned) begin
+            trap_valid = 1'b1;
+            trap_epc   = mem_pc;
+            trap_cause = 64'd0; // Instruction address misaligned (IALIGN=32).
+            trap_tval  = mem_control_target;
+        end else if (!reset && !stall && mem_valid &&
+                     (mem_read || mem_write) &&
+                     (mem_misaligned_fault || mem_out_of_range_fault)) begin
 
             trap_valid = 1'b1;
             trap_epc   = mem_pc;

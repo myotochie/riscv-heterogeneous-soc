@@ -1,5 +1,10 @@
 # RISC-V Core Microarchitecture Specification v0.1
 
+> Document de spécification cible/historique. Les fonctionnalités prévues ici
+> ne sont pas toutes implémentées. Pour l'état effectif et les limites testées,
+> lire [ARCHITECTURE_OVERVIEW](ARCHITECTURE_OVERVIEW.md) et
+> [PROJECT_PROGRESS](../PROJECT_PROGRESS.md).
+
 ## 1. Purpose
 
 This document defines the initial microarchitecture of the RISC-V processor core used in the RISC-V Heterogeneous SoC project.

@@ -45,6 +45,8 @@ module rv64_pipeline #(
     logic        ex_mem_mem_to_reg;
     logic        ex_mem_illegal_instr;
     logic        ex_mem_valid;
+    logic        ex_mem_target_misaligned;
+    logic [63:0] ex_mem_control_target;
     logic        ex_mem_csr_valid;
     logic [2:0]  ex_mem_csr_funct3;
     logic        ex_mem_mret_valid;
@@ -110,7 +112,9 @@ module rv64_pipeline #(
     exception_controller u_exception_controller (
         .reset                  (reset),
         .stall                  (stall),
-        .mem_valid              (ex_mem_valid),
+        .mem_valid              (ex_mem_valid && !flush),
+        .mem_target_misaligned  (ex_mem_target_misaligned),
+        .mem_control_target     (ex_mem_control_target),
         .mem_read               (ex_mem_mem_read),
         .mem_write              (ex_mem_mem_write),
         .mem_misaligned_fault   (mem_misaligned_fault),
@@ -192,6 +196,8 @@ module rv64_pipeline #(
         .ex_mem_mem_to_reg   (ex_mem_mem_to_reg),
         .ex_mem_illegal_instr(ex_mem_illegal_instr),
         .ex_mem_valid        (ex_mem_valid),
+        .ex_mem_target_misaligned(ex_mem_target_misaligned),
+        .ex_mem_control_target(ex_mem_control_target),
         .ex_mem_csr_valid    (ex_mem_csr_valid),
         .ex_mem_csr_funct3   (ex_mem_csr_funct3),
         .ex_mem_mret_valid   (ex_mem_mret_valid),

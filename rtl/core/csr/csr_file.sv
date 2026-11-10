@@ -141,7 +141,7 @@ module csr_file (
                 mstatus_q[MSTATUS_MPP_LSB +: 2] <= 2'b11;
 
             end else if (mret_valid) begin
-                // MRET remains externally disconnected.
+                // The pipeline qualifies MRET at WB after age arbitration.
                 mstatus_q[MSTATUS_MIE] <=
                     mstatus_q[MSTATUS_MPIE];
 

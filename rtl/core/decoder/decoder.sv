@@ -156,7 +156,7 @@ module decoder (
         end
 
         // RV64I conditional branches (B-type).
-        // Actual PC redirection will be integrated in CF-02.
+        // PC redirection is resolved in EX.
         if (opcode == 7'b1100011) begin
             case (funct3)
                 3'b000, // BEQ
@@ -174,6 +174,13 @@ module decoder (
                     // Reserved branch funct3 values remain illegal.
                 end
             endcase
+        end
+
+        // RV64I unconditional jumps. JALR reserves all nonzero funct3.
+        if (opcode == 7'b1101111 ||
+            (opcode == 7'b1100111 && funct3 == 3'b000)) begin
+            reg_write     = 1'b1;
+            illegal_instr = 1'b0;
         end
 
         // SYSTEM opcode: CSR operations and MRET.
@@ -198,7 +205,7 @@ module decoder (
         end
 
         if (!illegal_instr) begin
-            uses_rs1 = (opcode != 7'b1110011) ||
+            uses_rs1 = (opcode != 7'b1110011 && opcode != 7'b1101111) ||
                        (csr_valid && !funct3[2]);
             uses_rs2 = (opcode == 7'b0110011 ||
                         opcode == 7'b0100011 ||

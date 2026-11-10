@@ -1,4 +1,10 @@
 #include "Vrv64_pipeline.h"
+#if __has_include("Vrv64_pipeline___024root.h")
+#include "Vrv64_pipeline___024root.h"
+#define REGFILE_ROOT(dut) ((dut).rootp)
+#else
+#define REGFILE_ROOT(dut) (&(dut))
+#endif
 #include "verilated.h"
 
 #include <cstdint>
@@ -50,17 +56,17 @@ int main(int argc, char** argv) {
 
 
     check(
-        dut.rv64_pipeline__DOT__u_frontend__DOT__u_fetch_decode__DOT__u_decode__DOT__u_regfile__DOT__debug_x1 == 5,
+        REGFILE_ROOT(dut)->rv64_pipeline__DOT__u_frontend__DOT__u_fetch_decode__DOT__u_decode__DOT__u_regfile__DOT__debug_x1 == 5,
         "register x1 contains 5"
     );
 
     check(
-        dut.rv64_pipeline__DOT__u_frontend__DOT__u_fetch_decode__DOT__u_decode__DOT__u_regfile__DOT__debug_x2 == 7,
+        REGFILE_ROOT(dut)->rv64_pipeline__DOT__u_frontend__DOT__u_fetch_decode__DOT__u_decode__DOT__u_regfile__DOT__debug_x2 == 7,
         "register x2 contains 7"
     );
 
     check(
-        dut.rv64_pipeline__DOT__u_frontend__DOT__u_fetch_decode__DOT__u_decode__DOT__u_regfile__DOT__debug_x3 == 9,
+        REGFILE_ROOT(dut)->rv64_pipeline__DOT__u_frontend__DOT__u_fetch_decode__DOT__u_decode__DOT__u_regfile__DOT__debug_x3 == 9,
         "register x3 contains 9"
     );
 

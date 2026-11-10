@@ -141,12 +141,53 @@ The project is expected to use:
 
 ## Project Status
 
-**Current phase:** Architecture and system specification.
+The implemented design is currently a **single RV64 five-stage experimental
+core**, with a partial integer ISA, LD/SD, forwarding, machine CSR support,
+precise data-memory traps, conditional branches, and local JAL/JALR work under
+review. The RV64GC multicore/cache/Linux table above is a **future target**,
+not a statement of implemented or validated capabilities.
 
-The first implementation phase will focus on establishing the processor microarchitecture and a robust RTL/verification foundation before progressively integrating multicore features.
+CF-01 (`bc4a80b`) and CF-02 (`81eb817`) precede the CF-03 implementation on
+`feat/rv64-program-loader`. CF-03 has passed local verification. Its publication
+and integration status is recorded separately in the project progress log.
+Current limitations and evidence are tracked in [PROJECT_PROGRESS](docs/PROJECT_PROGRESS.md) and
+[ARCHITECTURE_OVERVIEW](docs/architecture/ARCHITECTURE_OVERVIEW.md).
+
+### Reproduce the complete RTL regression
+
+Install/provide Bash, Python 3, a C++ compiler, Make and Verilator >=5. The CI
+reference version is 5.040; runners never install tools on the local system.
+
+```bash
+VERILATOR=/path/to/verilator-5.040/bin/verilator \
+  bash scripts/run_clean_regression.sh
+```
+
+The runner copies tracked and new non-ignored sources into a clean temporary
+snapshot, generates required memory fixtures, runs all active suites, and
+records tool versions, source SHA256 hashes, logs and a PASS/FAIL summary.
+It returns failure if any suite fails. Two obsolete load-invalid benches are
+catalogued as [historical](verification/historical/README.md), not counted as
+passing tests. The CSR unit bench is active again.
+
+For a focused study:
+
+```bash
+VERILATOR=verilator bash verification/scripts/run_jump_unit.sh
+VERILATOR=verilator bash verification/scripts/run_jump_pipeline.sh
+```
+
+Read the [CF-03 architecture](docs/architecture/cf03-jumps.md),
+[implementation guide](docs/implementation/cf03-jumps.md),
+[verification dossier](docs/verification/cf03-jumps.md),
+[learning guide](docs/learning/cf03-jumps.md) and
+[decision log](docs/decisions/cf03-jumps.md).
+
+Simulation success is not full ISA conformance, synthesis, timing closure,
+FPGA validation or a multicore demonstration. The instruction ROM still uses
+integrated programs; external bare-metal program loading is the next proposed
+CF-04 milestone.
 
 ## License
 
 This project is licensed under the Apache License 2.0.
-
-# Test contribution

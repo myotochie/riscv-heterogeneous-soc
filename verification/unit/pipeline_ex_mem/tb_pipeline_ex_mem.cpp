@@ -23,6 +23,8 @@ static void tick(Vpipeline_ex_mem& dut) {
 }
 
 static void set_inputs(Vpipeline_ex_mem& dut) {
+    dut.target_misaligned_in = 1;
+    dut.control_target_in = 0x1234567880000002ULL;
     dut.pc_in = 0x80000100ULL;
     dut.instr_in = 0x0020A023;
     dut.alu_result_in = 0x80002000ULL;
@@ -50,6 +52,8 @@ static void check_cleared(Vpipeline_ex_mem& dut) {
     check(dut.mem_to_reg_out == 0, "mem_to_reg cleared");
     check(dut.illegal_instr_out == 0, "illegal flag cleared");
     check(dut.valid_out == 0, "valid cleared");
+    check(!dut.target_misaligned_out && dut.control_target_out == 0,
+          "target exception metadata cleared");
 }
 
 int main() {
@@ -81,8 +85,13 @@ int main() {
     check(dut.illegal_instr_out == 0, "illegal flag captured");
     check(dut.valid_out == 1, "valid captured");
 
+    check(dut.target_misaligned_out && dut.control_target_out == 0x1234567880000002ULL,
+          "target exception and full-width target captured");
+
     // Test 3: stall holds every output despite changing inputs.
     dut.stall = 1;
+    dut.target_misaligned_in = 0;
+    dut.control_target_in = 0;
     dut.pc_in = 0xDEADBEEF;
     dut.instr_in = 0xFFFFFFFF;
     dut.alu_result_in = 0xAAAAAAAA;
@@ -108,6 +117,9 @@ int main() {
     check(dut.mem_to_reg_out == 0, "stall holds mem_to_reg");
     check(dut.illegal_instr_out == 0, "stall holds illegal flag");
     check(dut.valid_out == 1, "stall holds valid");
+
+    check(dut.target_misaligned_out && dut.control_target_out == 0x1234567880000002ULL,
+          "stall holds target exception metadata");
 
     // Test 4: flush overrides stall and clears memory commands.
     dut.flush = 1;
@@ -136,6 +148,7 @@ int main() {
     tick(dut);
 
     check(dut.valid_out == 0, "invalid input remains invalid");
+    check(!dut.target_misaligned_out, "invalid input cannot raise target exception");
     check(dut.reg_write_out == 0, "invalid input disables reg_write");
     check(dut.mem_read_out == 0, "invalid input disables mem_read");
     check(dut.mem_write_out == 0, "invalid input disables mem_write");

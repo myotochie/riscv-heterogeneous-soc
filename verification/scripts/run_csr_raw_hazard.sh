@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../../scripts/verilator_env.sh"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 BUILD_DIR="${BUILD_DIR:-/tmp/rv64_csr_raw_hazard}"
 TB="$ROOT/verification/unit/rv64_pipeline/tb_csr_raw_hazard.cpp"
-VERILATOR="${VERILATOR:-/opt/verilator-modern/bin/verilator}"
 
 cd "$ROOT"
 

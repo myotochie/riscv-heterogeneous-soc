@@ -1,4 +1,10 @@
 #include "Vrv64_pipeline.h"
+#if __has_include("Vrv64_pipeline___024root.h")
+#include "Vrv64_pipeline___024root.h"
+#define REGFILE_ROOT(dut) ((dut).rootp)
+#else
+#define REGFILE_ROOT(dut) (&(dut))
+#endif
 #include "verilated.h"
 
 #include <cstdint>
@@ -46,10 +52,10 @@ int main(int argc, char** argv) {
     }
 
     const uint64_t x1 =
-        dut.rv64_pipeline__DOT__u_frontend__DOT__u_fetch_decode__DOT__u_decode__DOT__u_regfile__DOT__debug_x1;
+        REGFILE_ROOT(dut)->rv64_pipeline__DOT__u_frontend__DOT__u_fetch_decode__DOT__u_decode__DOT__u_regfile__DOT__debug_x1;
 
     const uint64_t x2 =
-        dut.rv64_pipeline__DOT__u_frontend__DOT__u_fetch_decode__DOT__u_decode__DOT__u_regfile__DOT__debug_x2;
+        REGFILE_ROOT(dut)->rv64_pipeline__DOT__u_frontend__DOT__u_fetch_decode__DOT__u_decode__DOT__u_regfile__DOT__debug_x2;
 
     std::cout << "\n--- FORWARDING PRIORITY DEBUG ---\n";
     std::cout << "x1 = " << x1 << " (expected 12)\n";

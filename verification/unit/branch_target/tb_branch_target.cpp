@@ -84,6 +84,20 @@ int main(int argc, char** argv) {
     check(dut, 0x1000, encode_i_type(12), 0x2001, 2,
           0x200C, "JALR clears target bit 0");
 
+    for (int32_t offset : {-1048576, -2048, -2, 0, 2, 2046, 1048574}) {
+        check(dut, 0x1234567880000000ULL, encode_j_type(offset), 0, 1,
+              0x1234567880000000ULL + static_cast<uint64_t>(offset),
+              "JAL signed immediate boundaries at 64-bit PC");
+    }
+    for (int16_t offset : {-2048, -1, 0, 1, 2047}) {
+        for (uint64_t low = 0; low < 4; ++low) {
+            const uint64_t rs1 = 0xabcdef0080000000ULL + low;
+            check(dut, 0, encode_i_type(offset), rs1, 2,
+                  (rs1 + static_cast<uint64_t>(offset)) & ~uint64_t{1},
+                  "JALR signed offset and bit-zero masking");
+        }
+    }
+
     // Default kind: return the current PC.
     check(dut, 0x1234, 0, 0, 3,
           0x1234, "Invalid kind returns PC");

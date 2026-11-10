@@ -41,6 +41,12 @@ module execute_stage #(
     logic [63:0] forwarded_rs2;
     logic [63:0] alu_operand_b;
     logic [63:0] alu_result;
+    logic is_jump;
+
+    // Carry the link through the ordinary ALU-result WB/forwarding path.
+    assign is_jump = (instr_in[6:0] == 7'b1101111) ||
+                     (instr_in[6:0] == 7'b1100111 &&
+                      instr_in[14:12] == 3'b000);
 
     generate
         if (ENABLE_FORWARDING) begin : gen_forwarding
@@ -81,7 +87,7 @@ module execute_stage #(
     always_comb begin
         pc_out            = pc_in;
         instr_out         = instr_in;
-        alu_result_out    = alu_result;
+        alu_result_out    = is_jump ? pc_in + 64'd4 : alu_result;
         rs2_value_out     = forwarded_rs2;
         rd_idx_out        = rd_idx_in;
 

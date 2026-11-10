@@ -16,6 +16,14 @@ module rv64_datapath (
     core_pkg::alu_op_t alu_op;
     logic reg_write;
     logic alu_src;
+    logic decoded_illegal;
+    logic supported_opcode;
+
+    // This teaching datapath has no PC, memory, or CSR execution path.
+    // Keep its original R-type/ADDI contract independent of decoder growth.
+    assign supported_opcode = (instr[6:0] == 7'b0110011) ||
+                              (instr[6:0] == 7'b0010011);
+    assign illegal_instr = decoded_illegal || !supported_opcode;
 
     logic [63:0] immediate;
     logic [63:0] alu_operand_b;
@@ -40,7 +48,7 @@ module rv64_datapath (
         .mem_read     (),
         .mem_write    (),
         .alu_src      (alu_src),
-        .illegal_instr(illegal_instr)
+        .illegal_instr(decoded_illegal)
     );
 
     // Immediate extraction and sign extension.

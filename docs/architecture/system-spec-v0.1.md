@@ -1,5 +1,10 @@
 # RISC-V Heterogeneous Multicore SoC
 
+> Document de spécification cible/historique. Les fonctionnalités prévues ici
+> ne sont pas toutes implémentées. Pour l'état effectif et les limites testées,
+> lire [ARCHITECTURE_OVERVIEW](ARCHITECTURE_OVERVIEW.md) et
+> [PROJECT_PROGRESS](../PROJECT_PROGRESS.md).
+
 ## 1. System Overview
 
 ### 1.1 Purpose

@@ -2,40 +2,69 @@ name: RISC-V RTL CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/rv64-program-loader]
   pull_request:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   rtl-regression:
-    name: RTL Regression - Verilator
+    name: Full RTL regression - Verilator 5.040
     runs-on: ubuntu-22.04
+    env:
+      VERILATOR_TAG: v5.040
+      VALIDATION_ROOT: ${{ runner.temp }}/rv64-validation
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Build selected Verilator release in the runner
+        shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            verilator \
-            build-essential \
-            make \
-            git
+          sudo apt-get install -y autoconf bison flex help2man build-essential git python3
+          git clone --depth 1 --branch "$VERILATOR_TAG" https://github.com/verilator/verilator.git "$RUNNER_TEMP/verilator-src"
+          cd "$RUNNER_TEMP/verilator-src"
+          git rev-parse HEAD
+          autoconf
+          ./configure --prefix="$RUNNER_TEMP/verilator-install"
+          make -j2
+          make install
+          echo "VERILATOR=$RUNNER_TEMP/verilator-install/bin/verilator" >> "$GITHUB_ENV"
 
-      - name: Display tool versions
+      - name: Record dependency versions
         run: |
-          verilator --version
-          g++ --version
+          mkdir -p "$VALIDATION_ROOT"
+          {
+            "$VERILATOR" --version
+            git -C "$RUNNER_TEMP/verilator-src" rev-parse HEAD
+            dpkg-query -W autoconf bison flex help2man build-essential git python3
+          } > "$VALIDATION_ROOT/dependencies.log"
+          cat "$VALIDATION_ROOT/dependencies.log"
 
-      - name: Run RTL unit and integration tests
-        run: |
-          chmod +x scripts/run_unit_tests.sh
-          ./scripts/run_unit_tests.sh
+      - name: Run full regression from a clean source snapshot
+        env:
+          CLEAN_ROOT: ${{ runner.temp }}/rv64-validation/clean
+          LOG_ROOT: ${{ runner.temp }}/rv64-validation/results
+        run: bash scripts/run_clean_regression.sh
 
-      - name: Check generated artifacts
+      - name: Require unchanged source checkout
         if: always()
         run: |
           git status --short
+          test -z "$(git status --porcelain --untracked-files=normal)"
+
+      - name: Preserve validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtl-validation
+          path: |
+            ${{ runner.temp }}/rv64-validation/**/*.log
+            ${{ runner.temp }}/rv64-validation/results/manifest.json
+            ${{ runner.temp }}/rv64-validation/results/summary.tsv
+          if-no-files-found: warn

@@ -37,6 +37,8 @@ module fetch_decode_execute_path #(
     output logic        ex_mem_mem_to_reg,
     output logic        ex_mem_illegal_instr,
     output logic        ex_mem_valid,
+    output logic        ex_mem_target_misaligned,
+    output logic [63:0] ex_mem_control_target,
     output logic        ex_mem_csr_valid,
     output logic [2:0]  ex_mem_csr_funct3,
     output logic        ex_mem_mret_valid,
@@ -96,7 +98,11 @@ module fetch_decode_execute_path #(
     logic [2:0] ex_csr_funct3;
     logic ex_mret_valid;
 
-    // CF-02: conditional branches resolved in EX.
+    // Conditional branches and jumps resolved in EX.
+    logic ex_is_jal;
+    logic ex_is_jalr;
+    logic ex_target_misaligned;
+    logic [1:0] ex_target_kind;
     logic ex_branch_taken;
     logic ex_branch_illegal;
     logic ex_branch_redirect;
@@ -285,6 +291,19 @@ module fetch_decode_execute_path #(
     assign ex_mret_valid = ex_valid && id_ex_mret_valid
                            && !ex_illegal_instr;
 
+    assign ex_is_jal = id_ex_valid && !id_ex_illegal_instr &&
+                       id_ex_instr[6:0] == 7'b1101111;
+    assign ex_is_jalr = id_ex_valid && !id_ex_illegal_instr &&
+                        id_ex_instr[6:0] == 7'b1100111 &&
+                        id_ex_instr[14:12] == 3'b000;
+    assign ex_target_kind = ex_is_jal ? 2'b01 :
+                            (ex_is_jalr ? 2'b10 : 2'b00);
+
+    // IALIGN=32: only taken control transfers can fault. Transport the
+    // fault to MEM so older WB instructions may retire normally.
+    assign ex_target_misaligned = ex_branch_taken && !ex_branch_illegal &&
+                                  (ex_branch_target[1:0] != 2'b00);
+
     // Compare the forwarded operands, not stale ID-stage values.
     branch_decision u_ex_branch_decision (
         .funct3          (id_ex_instr[14:12]),
@@ -293,8 +312,8 @@ module fetch_decode_execute_path #(
         .is_branch       (id_ex_valid &&
                           id_ex_instr[6:0] == 7'b1100011 &&
                           !id_ex_illegal_instr),
-        .is_jal          (1'b0),
-        .is_jalr         (1'b0),
+        .is_jal          (ex_is_jal),
+        .is_jalr         (ex_is_jalr),
         .branch_taken    (ex_branch_taken),
         .illegal_control (ex_branch_illegal)
     );
@@ -303,7 +322,7 @@ module fetch_decode_execute_path #(
         .pc          (id_ex_pc),
         .instr       (id_ex_instr),
         .rs1_value   (ex_forwarded_rs1),
-        .target_kind (2'b00),
+        .target_kind (ex_target_kind),
         .target      (ex_branch_target)
     );
 
@@ -312,6 +331,8 @@ module fetch_decode_execute_path #(
     assign ex_branch_redirect =
         ex_branch_taken &&
         !ex_branch_illegal &&
+        !ex_target_misaligned &&
+        !reset &&
         !stall &&
         !flush &&
         !trap_redirect &&
@@ -327,12 +348,14 @@ module fetch_decode_execute_path #(
         .alu_result_in     (ex_alu_result),
         .rs2_value_in      (ex_rs2_value),
         .rd_idx_in         (ex_rd_idx),
-        .reg_write_in      (ex_reg_write),
+        .reg_write_in      (ex_reg_write && !ex_target_misaligned),
         .mem_read_in       (ex_mem_read),
         .mem_write_in      (ex_mem_write),
         .mem_to_reg_in     (ex_mem_to_reg),
         .illegal_instr_in  (ex_illegal_instr),
         .valid_in          (ex_valid),
+        .target_misaligned_in(ex_target_misaligned),
+        .control_target_in (ex_branch_target),
         .csr_valid_in      (ex_csr_valid),
         .csr_funct3_in     (ex_csr_funct3),
         .mret_valid_in     (ex_mret_valid),
@@ -351,6 +374,8 @@ module fetch_decode_execute_path #(
         .mem_to_reg_out    (ex_mem_mem_to_reg),
         .illegal_instr_out (ex_mem_illegal_instr),
         .valid_out         (ex_mem_valid),
+        .target_misaligned_out(ex_mem_target_misaligned),
+        .control_target_out(ex_mem_control_target),
         .csr_valid_out     (ex_mem_csr_valid),
         .csr_funct3_out    (ex_mem_csr_funct3),
         .mret_valid_out    (ex_mem_mret_valid),

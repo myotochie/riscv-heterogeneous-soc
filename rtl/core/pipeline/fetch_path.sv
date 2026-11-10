@@ -525,6 +525,218 @@ module fetch_path #(
                 endcase
             end
 
+            36: begin
+                // CF-03: Nested calls, saved RA, alternate link, negative JALR, rd=rs1 and odd target.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h08000A13; // ADDI x20,x0,128
+                    64'h0000000080000004: instr_mem_data = 32'h03C000EF; // JAL x1,function
+                    64'h0000000080000008: instr_mem_data = 32'h00008513; // Copy restored RA
+                    64'h000000008000000C: instr_mem_data = 32'h0740006F; // JAL x0,next
+                    64'h0000000080000010: instr_mem_data = 32'h06300F13; // Wrong path
+                    64'h0000000080000014: instr_mem_data = 32'h000A3023; // Wrong-path store
+                    64'h0000000080000040: instr_mem_data = 32'h00008593; // Consume link at target
+                    64'h0000000080000044: instr_mem_data = 32'h001A3023; // Save RA
+                    64'h0000000080000048: instr_mem_data = 32'h018002EF; // Nested call with x5
+                    64'h000000008000004C: instr_mem_data = 32'h000A3083; // Restore RA
+                    64'h0000000080000050: instr_mem_data = 32'h00008067; // RET with load-use
+                    64'h0000000080000054: instr_mem_data = 32'h000A3023; // Wrong-path store
+                    64'h0000000080000060: instr_mem_data = 32'h00028613; // Consume nested link
+                    64'h0000000080000064: instr_mem_data = 32'h00028067; // Return backwards
+                    64'h0000000080000068: instr_mem_data = 32'h30501073; // Wrong-path MTVEC write
+                    64'h0000000080000074: instr_mem_data = 32'h04C0006F; // Forward to done
+                    64'h0000000080000080: instr_mem_data = 32'h0100036F; // JAL x6,+16
+                    64'h0000000080000084: instr_mem_data = 32'h06300F13; // Wrong path
+                    64'h0000000080000090: instr_mem_data = 32'h02D30313; // Build odd target 0x800000b1
+                    64'h0000000080000094: instr_mem_data = 32'h00030367; // JALR rd=rs1, clear bit zero
+                    64'h0000000080000098: instr_mem_data = 32'h06300F13; // Wrong path
+                    64'h00000000800000A0: instr_mem_data = 32'h00038793; // Link must be 0x800000bc
+                    64'h00000000800000A4: instr_mem_data = 32'hFD1FF06F; // Backward JAL to 0x74
+                    64'h00000000800000B0: instr_mem_data = 32'h00030693; // Link must be 0x80000098
+                    64'h00000000800000B4: instr_mem_data = 32'h02030713; // Base for negative offset
+                    64'h00000000800000B8: instr_mem_data = 32'hFE8703E7; // Negative JALR offset to 0xa0
+                    64'h00000000800000C0: instr_mem_data = 32'h0000006F; // Done loop
+                    default: ;
+                endcase
+            end
+
+            37: begin
+                // CF-03: ALU, CSR and load forwarding into JALR.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h020000EF; // Get PC
+                    64'h0000000080000020: instr_mem_data = 32'h03C08113; // ALU target 0x40
+                    64'h0000000080000024: instr_mem_data = 32'h000101E7; // EX/MEM ALU -> JALR
+                    64'h0000000080000028: instr_mem_data = 32'h00030393; // Copy link
+                    64'h000000008000002C: instr_mem_data = 32'h08000A13; // Memory base
+                    64'h0000000080000030: instr_mem_data = 32'h07C08413; // Load target 0x80
+                    64'h0000000080000034: instr_mem_data = 32'h008A3023; // Store target
+                    64'h0000000080000038: instr_mem_data = 32'h000A3483; // Load target
+                    64'h000000008000003C: instr_mem_data = 32'h00048567; // Load-use JALR
+                    64'h0000000080000040: instr_mem_data = 32'h34119273; // MEPC = 0x28 (implemented CSR)
+                    64'h0000000080000044: instr_mem_data = 32'h341022F3; // Read MEPC target
+                    64'h0000000080000048: instr_mem_data = 32'h00028367; // EX/MEM CSR -> JALR to 0x28
+                    64'h0000000080000080: instr_mem_data = 32'h00050593; // Copy link
+                    64'h0000000080000084: instr_mem_data = 32'h00C0006F; // Skip
+                    64'h0000000080000090: instr_mem_data = 32'h06000613; // Marker
+                    64'h0000000080000094: instr_mem_data = 32'h0000006F; // Done loop
+                    default: ;
+                endcase
+            end
+
+            38: begin
+                // CF-03: Precise misaligned jump exception.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h00700113; // Older instruction must retire
+                    64'h0000000080000004: instr_mem_data = 32'h002000EF; // Misaligned JAL, no link
+                    64'h0000000080000008: instr_mem_data = 32'h06300F13; // Wrong path
+                    64'h000000008000000C: instr_mem_data = 32'h00203023; // Wrong-path nonzero store
+                    64'h0000000080000010: instr_mem_data = 32'h30511073; // Wrong-path MTVEC write
+                    64'h0000000080000100: instr_mem_data = 32'h07B00513; // Trap handler
+                    64'h0000000080000104: instr_mem_data = 32'h00003583; // No younger store
+                    64'h0000000080000108: instr_mem_data = 32'h30502673; // MTVEC must remain unchanged
+                    64'h000000008000010C: instr_mem_data = 32'h0000006F; // Done loop
+                    default: ;
+                endcase
+            end
+
+            39: begin
+                // CF-03: Precise misaligned jump exception.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h00700113; // Older instruction must retire
+                    64'h0000000080000004: instr_mem_data = 32'h01C000EF; // Get link 8
+                    64'h0000000080000020: instr_mem_data = 32'h01B08113; // Odd target 0x23
+                    64'h0000000080000024: instr_mem_data = 32'h000100E7; // Fault target 0x22 after bit-zero mask
+                    64'h0000000080000028: instr_mem_data = 32'h06300F13; // Wrong path
+                    64'h000000008000002C: instr_mem_data = 32'h00203023; // Wrong-path nonzero store
+                    64'h0000000080000030: instr_mem_data = 32'h30511073; // Wrong-path MTVEC write
+                    64'h0000000080000100: instr_mem_data = 32'h07B00513; // Trap handler
+                    64'h0000000080000104: instr_mem_data = 32'h00003583; // No younger store
+                    64'h0000000080000108: instr_mem_data = 32'h30502673; // MTVEC must remain unchanged
+                    64'h000000008000010C: instr_mem_data = 32'h0000006F; // Done loop
+                    default: ;
+                endcase
+            end
+
+            40: begin
+                // CF-03: Older MEM load fault beats EX JAL.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h04100093; // Misaligned address
+                    64'h0000000080000004: instr_mem_data = 32'h0000B303; // Fault
+                    64'h0000000080000008: instr_mem_data = 32'h018002EF; // Younger jump
+                    64'h000000008000000C: instr_mem_data = 32'h06300F13; // Wrong path
+                    64'h0000000080000020: instr_mem_data = 32'h05800F93; // Canceled target
+                    64'h0000000080000100: instr_mem_data = 32'h07B00513; // Handler
+                    64'h0000000080000104: instr_mem_data = 32'h0000006F; // Done loop
+                    default: ;
+                endcase
+            end
+
+            41: begin
+                // CF-03: WB MRET beats MEM jump fault and EX jump.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h04100093; // Misaligned address
+                    64'h0000000080000004: instr_mem_data = 32'h0000B303; // Fault
+                    64'h0000000080000008: instr_mem_data = 32'h00700393; // Resume
+                    64'h000000008000000C: instr_mem_data = 32'h00800413; // Resume
+                    64'h0000000080000010: instr_mem_data = 32'h0000006F; // Done loop
+                    64'h0000000080000100: instr_mem_data = 32'h341022F3; // Read MEPC
+                    64'h0000000080000104: instr_mem_data = 32'h00428293; // Skip LD
+                    64'h0000000080000108: instr_mem_data = 32'h34129073; // Write MEPC
+                    64'h000000008000010C: instr_mem_data = 32'h30200073; // MRET
+                    64'h0000000080000110: instr_mem_data = 32'h002005EF; // Canceled MEM jump fault
+                    64'h0000000080000114: instr_mem_data = 32'h13828667; // Canceled EX JALR to 0x140
+                    64'h0000000080000140: instr_mem_data = 32'h06300F13; // Canceled target
+                    default: ;
+                endcase
+            end
+
+            42: begin
+                // CF-03: Older WB MTVEC write determines jump trap target.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h020000EF; // Get PC
+                    64'h0000000080000020: instr_mem_data = 32'h17C08113; // New MTVEC 0x180
+                    64'h0000000080000024: instr_mem_data = 32'h30511073; // Commit MTVEC at jump trap
+                    64'h0000000080000028: instr_mem_data = 32'h002002EF; // Misaligned jump
+                    64'h000000008000002C: instr_mem_data = 32'h06300F13; // Wrong path
+                    64'h0000000080000100: instr_mem_data = 32'h06300F93; // Old handler forbidden
+                    64'h0000000080000180: instr_mem_data = 32'h07B00513; // New handler
+                    64'h0000000080000184: instr_mem_data = 32'h0000006F; // Done loop
+                    default: ;
+                endcase
+            end
+
+            43: begin
+                // CF-03: Reserved JALR encodings do not redirect or write.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h02000093; // Base
+                    64'h0000000080000004: instr_mem_data = 32'h000092E7; // Reserved funct3=1
+                    64'h0000000080000008: instr_mem_data = 32'h0000A2E7; // Reserved funct3=2
+                    64'h000000008000000C: instr_mem_data = 32'h0000B2E7; // Reserved funct3=3
+                    64'h0000000080000010: instr_mem_data = 32'h0000C2E7; // Reserved funct3=4
+                    64'h0000000080000014: instr_mem_data = 32'h0000D2E7; // Reserved funct3=5
+                    64'h0000000080000018: instr_mem_data = 32'h0000E2E7; // Reserved funct3=6
+                    64'h000000008000001C: instr_mem_data = 32'h0000F2E7; // Reserved funct3=7
+                    64'h0000000080000020: instr_mem_data = 32'h07B00513; // Fallthrough
+                    64'h0000000080000024: instr_mem_data = 32'h0000006F; // Done loop
+                    default: ;
+                endcase
+            end
+
+            44: begin
+                // CF-03: JALR forwarding priority and MEM/WB path.
+                case (pc_value)
+                    64'h0000000080000000: instr_mem_data = 32'h020000EF; // Get PC
+                    64'h0000000080000020: instr_mem_data = 32'h03C08113; // Older target 0x40
+                    64'h0000000080000024: instr_mem_data = 32'h05C08113; // Newer target 0x60
+                    64'h0000000080000028: instr_mem_data = 32'h000101E7; // Newest target wins
+                    64'h0000000080000040: instr_mem_data = 32'h06300F13; // Stale target forbidden
+                    64'h0000000080000060: instr_mem_data = 32'h07C08213; // Target 0x80
+                    64'h0000000080000064: instr_mem_data = 32'h00000013; // Gap
+                    64'h0000000080000068: instr_mem_data = 32'h000202E7; // MEM/WB -> JALR
+                    64'h0000000080000080: instr_mem_data = 32'h00028513; // Link 0x6c
+                    64'h0000000080000084: instr_mem_data = 32'h0000006F; // Done loop
+                    default: ;
+                endcase
+            end
+
+            45: begin
+                // CF-03: JAL immediate aliases load rd=x5, without a dependency.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h00003283; // LD x5,0(x0)
+                    64'h80000004: instr_mem_data = 32'h000280EF; // JAL x1,+0x28000
+                    64'h80000008: instr_mem_data = 32'h06300F13; // Wrong path
+                    64'h80028004: instr_mem_data = 32'h00008513; // Copy link
+                    64'h80028008: instr_mem_data = 32'h0000006F; // Done loop
+                    default: ;
+                endcase
+            end
+
+            46: begin
+                // CF-03: a misaligned branch target faults only when taken.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h00100093; // ADDI x1,x0,1
+                    64'h80000004: instr_mem_data = 32'h00109163; // BNE x1,x1,+2 (not taken)
+                    64'h80000008: instr_mem_data = 32'h00108163; // BEQ x1,x1,+2 (taken)
+                    64'h8000000C: instr_mem_data = 32'h06300F13; // Wrong path
+                    64'h80000100: instr_mem_data = 32'h07B00513; // Handler marker
+                    64'h80000104: instr_mem_data = 32'h0000006F; // Done loop
+                    default: ;
+                endcase
+            end
+
+            47: begin
+                // CF-03 audit: an older MEM fault beats EX JALR.
+                case (pc_value)
+                    64'h80000000: instr_mem_data = 32'h04100093; // x1=65
+                    64'h80000004: instr_mem_data = 32'h0000B303; // Misaligned LD
+                    64'h80000008: instr_mem_data = 32'hFDF082E7; // JALR x5,x1,-33 -> 0x20
+                    64'h8000000C: instr_mem_data = 32'h06300F13; // Wrong path
+                    64'h00000020: instr_mem_data = 32'h05800F93; // Forbidden JALR target
+                    64'h80000100: instr_mem_data = 32'h07B00513; // Handler
+                    64'h80000104: instr_mem_data = 32'h0000006F; // Done
+                    default: ;
+                endcase
+            end
+
             default: ;
         endcase
     end

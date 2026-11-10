@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../../scripts/verilator_env.sh"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BUILD_DIR="/tmp/rv64_csr_execute_build"
+BUILD_DIR="${BUILD_DIR:-/tmp/rv64_csr_execute_build}"
 
-rm -rf "$BUILD_DIR"
+mkdir -p "$BUILD_DIR"
 
-verilator \
+"$VERILATOR" \
     --cc \
     --exe \
     --build \

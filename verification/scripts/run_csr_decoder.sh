@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../../scripts/verilator_env.sh"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BUILD_DIR="/tmp/rv64_csr_decoder_build"
+BUILD_DIR="${BUILD_DIR:-/tmp/rv64_csr_decoder_build}"
 
 echo "======================================"
 echo " RV64 CSR DECODER UNIT TEST"
@@ -19,9 +20,9 @@ do
     fi
 done
 
-rm -rf "$BUILD_DIR"
+mkdir -p "$BUILD_DIR"
 
-verilator \
+"$VERILATOR" \
     --cc --exe --build --sv \
     --top-module decoder \
     -Wno-fatal \

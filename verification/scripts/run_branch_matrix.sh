@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../../scripts/verilator_env.sh"
 
 cd "$(dirname "$0")/../.."
 
 run_program() {
     local program="$1"
-    local build_dir="obj_dir/branch_pipeline_${program}"
+    local build_dir="${BUILD_ROOT:-obj_dir}/branch_pipeline_${program}"
 
     echo "===================================="
     echo " BRANCH PIPELINE PROGRAM ${program}"
     echo "===================================="
 
-    verilator --cc --exe --build --sv \
+    "$VERILATOR" --cc --exe --build --sv \
         --top-module rv64_pipeline \
         "-GPROGRAM_ID=${program}" \
         --Mdir "$build_dir" \
@@ -43,7 +44,7 @@ run_program() {
         rtl/core/pipeline/rv64_pipeline.sv \
         "$(pwd)/verification/integration/tb_branch_matrix.cpp"
 
-    "./${build_dir}/Vrv64_pipeline" "$program"
+    "${build_dir}/Vrv64_pipeline" "$program"
 }
 
 for program in 26 27 28 29 30 31; do

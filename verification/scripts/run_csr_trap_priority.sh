@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../../scripts/verilator_env.sh"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BUILD="/tmp/rv64_csr_trap_priority"
+BUILD="${BUILD_DIR:-/tmp/rv64_csr_trap_priority}"
 
-if [[ -x /opt/verilator-modern/bin/verilator ]]; then
-    VERILATOR=/opt/verilator-modern/bin/verilator
-else
-    VERILATOR="$(command -v verilator)"
-fi
 
 mkdir -p "$BUILD"
 cd "$ROOT"

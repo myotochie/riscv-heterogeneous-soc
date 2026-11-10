@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../../scripts/verilator_env.sh"
 
 # Locate repository independently of the current directory.
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -8,7 +9,7 @@ TB="$ROOT/verification/unit/rv64_pipeline/tb_memory_traps.cpp"
 
 cd "$ROOT"
 
-command -v verilator >/dev/null || {
+command -v "$VERILATOR" >/dev/null || {
     echo "[ERROR] Verilator is not installed"
     exit 1
 }
@@ -43,7 +44,7 @@ for id in 10 11 12 13; do
 
     mkdir -p "$BUILD_DIR"
 
-    if verilator \
+    if "$VERILATOR" \
         --cc --exe --build \
         --top-module rv64_pipeline \
         -GPROGRAM_ID="$id" \

@@ -26,6 +26,10 @@ module tb_csr_pipeline_90_8d4;
     integer failures = 0;
 
     pipeline_ex_mem u_ex_mem (
+        .target_misaligned_in(1'b0),
+        .control_target_in(64'b0),
+        .target_misaligned_out(),
+        .control_target_out(),
         .clk(clk), .reset(reset), .flush(flush), .stall(stall),
         .pc_in(pc_in),
         .instr_in(instr_in),
