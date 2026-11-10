@@ -273,3 +273,18 @@ Les documents système/microarchitecture v0.1 reçoivent seulement un avertissem
 de spécification cible/historique : leurs exigences ne sont pas déclarées
 réalisées. Les cinq documents CF-03 apportent chacun une perspective différente,
 et PROJECT_PROGRESS distingue travail local, commit et publication.
+
+## 12. Correction du contexte GitHub Actions
+
+Le premier push du commit CF-03 a révélé une erreur de validation du workflow.
+VALIDATION_ROOT était défini dans jobs.rtl-regression.env avec runner.temp,
+alors que le contexte runner n'y est pas autorisé. La variable est déplacée
+dans l'env de l'étape Record dependency versions. Cette étape accède ensuite
+à la variable shell normalement. Les étapes de régression/artefacts gardent
+leurs expressions runner.temp, permises à ce niveau.
+
+La syntaxe YAML et la disponibilité des contextes sont deux validations
+différentes. La correction ne change ni les paramètres Verilator, ni les
+fichiers compilés, ni les assertions. Le résultat distant du nouveau commit
+doit néanmoins être vérifié avant fusion ; une bonne syntaxe locale ne prouve
+pas le démarrage ni la réussite d'un job GitHub.

@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       VERILATOR_TAG: v5.040
-      VALIDATION_ROOT: ${{ runner.temp }}/rv64-validation
 
     steps:
       - name: Checkout repository
@@ -37,6 +36,8 @@ jobs:
           echo "VERILATOR=$RUNNER_TEMP/verilator-install/bin/verilator" >> "$GITHUB_ENV"
 
       - name: Record dependency versions
+        env:
+          VALIDATION_ROOT: ${{ runner.temp }}/rv64-validation
         run: |
           mkdir -p "$VALIDATION_ROOT"
           {

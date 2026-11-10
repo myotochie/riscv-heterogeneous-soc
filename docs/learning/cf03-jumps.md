@@ -217,3 +217,34 @@ dépendance visible. Même un tel test réussi ne couvre que des stimuli finis :
 les instructions absentes, les comportements privilégiés incomplets et les
 combinaisons non exercées interdisent de revendiquer toute l'ISA. Il faut aussi
 distinguer simulation RTL, comparaison architecturale et validation physique.
+
+## 11. Retour d'expérience : YAML et contextes GitHub Actions
+
+Le premier push CF-03 a échoué avant tout job. Le YAML était analysable,
+mais l'expression runner.temp était placée dans l'env du job, où ce contexte
+n'est pas autorisé. Son déplacement dans l'env de l'étape qui consomme le
+chemin corrige ce problème de portée. Les résultats RTL locaux ne sont pas
+invalidés par un rejet du workflow, mais ils ne remplacent pas une CI distante.
+
+Cinq questions supplémentaires :
+1. Pourquoi un parseur YAML peut-il accepter un workflow rejeté par GitHub ?
+2. Pourquoi runner.temp est-il valide dans l'env d'une étape et pas du job ?
+3. Que prouve une exécution échouée contenant zéro job ?
+4. Pourquoi la correction n'exige-t-elle pas de rejouer tout le RTL localement ?
+5. Pourquoi faut-il attendre une nouvelle CI avant de fusionner ?
+
+## 12. Réponses : incident CI
+
+1. YAML décrit une structure et des chaînes ; GitHub interprète ensuite ses
+   clés, expressions et contextes avec des règles supplémentaires.
+2. Les contextes autorisés dépendent de la clé du workflow. GitHub autorise
+   runner dans steps.env ; la table des contextes ne l'autorise pas dans
+   jobs.<job_id>.env. Ce n'est pas une règle de portée de variable SystemVerilog.
+3. Cela ne démontre aucun résultat de simulation : aucun banc n'a été lancé.
+   Dans ce cas, l'annotation précise qu'il s'agit d'une validation du workflow.
+4. Seule la portée d'une variable de configuration CI change. Le RTL, les
+   stimuli et les commandes de test sont identiques au manifest déjà validé ;
+   contrôler la structure et les contextes est pertinent pour ce correctif.
+5. La nouvelle exécution doit vérifier que le workflow démarre puis que ses
+   étapes complètes réussissent sur le commit corrigé. Un rejet avant les tests
+   ne permet pas d'affirmer que les tests distants auraient réussi.

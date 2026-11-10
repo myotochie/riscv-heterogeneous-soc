@@ -109,3 +109,20 @@ commit final incluant ce déclenchement.
 3. Fusionner par avance rapide si main est ancêtre et si les contrôles réussissent.
 4. Audit CF-04 : mémoire d'instructions, toolchain disponible, linker/mapping.
 5. Plan détaillé puis accord avant toute implémentation CF-04.
+
+## Publication CF-03 : incident de démarrage CI
+
+Le commit CF-03 `66e4a882198a76de69f82ffd7c535a2d6a95ee52` a été créé, puis
+poussé par l'utilisateur sur origin/feat/rv64-program-loader. Le 2026-11-10,
+l'API GitHub confirme ce SHA sur la branche. L'exécution Actions
+[42911082817](https://github.com/myotochie/riscv-heterogeneous-soc/actions/runs/42911082817)
+a échoué à la validation du workflow : aucun job ni test RTL n'a été lancé.
+L'annotation signale à la ligne 19 le contexte runner non reconnu dans
+jobs.rtl-regression.env.
+
+Correctif préparé : déplacer VALIDATION_ROOT dans l'env de l'étape
+Record dependency versions, qui est son seul consommateur. Les autres emplois
+de runner.temp sont déjà dans des contextes d'étape valides. Les sources RTL,
+les bancs et les scripts restent identiques aux sources vérifiées localement.
+Le correctif n'est pas encore commité ; une nouvelle exécution distante doit
+réussir sur son commit avant fusion. main reste aec569b lors de ce contrôle.

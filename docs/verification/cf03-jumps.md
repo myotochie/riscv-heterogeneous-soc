@@ -289,3 +289,27 @@ les sources RTL, bancs et scripts de vérification restent identiques.
 La syntaxe YAML et le diff de ce changement sont contrôlés séparément. Le
 premier accès SSH de publication a été refusé (publickey) : aucun résultat
 distant de publication, fusion ou CI CF-03 n'est présumé.
+
+## 12. Premier essai GitHub : validation du contexte avant exécution
+
+La branche publiée pointe sur `66e4a882198a76de69f82ffd7c535a2d6a95ee52`.
+[Actions 42911082817](https://github.com/myotochie/riscv-heterogeneous-soc/actions/runs/42911082817)
+se termine en échec immédiat, avec zéro job et zéro check-run. L'annotation
+publique donne exactement la cause : ligne 19, contexte runner indisponible
+pour l'expression runner.temp. Il s'agit d'un rejet du workflow, pas d'un test
+matériel échoué. Le parsing YAML local ne vérifie pas ces règles sémantiques.
+
+Selon la [table officielle des contextes](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability),
+`jobs.<job_id>.env` n'autorise pas runner, tandis que
+`jobs.<job_id>.steps.env` l'autorise. Le correctif déplace donc la variable
+VALIDATION_ROOT au niveau de la seule étape qui la consomme. Les chemins de
+snapshot et d'artefacts utilisent déjà runner.temp dans des étapes valides.
+
+Contrôles locaux : parsing YAML ; absence de runner dans l'env du job ;
+présence de la variable dans l'env de Record dependency versions ; conservation
+des sources RTL/bancs/scripts par comparaison au manifest ; git diff --check.
+Ces contrôles ne remplacent pas une nouvelle exécution GitHub après publication.
+Les 25 suites locales restent le résultat du snapshot précédent, et aucune
+réussite distante n'est revendiquée pour le correctif tant qu'elle n'est pas
+observée. Aucun changement matériel ne justifie de relancer ces 25 suites pour
+ce déplacement de variable de workflow.
