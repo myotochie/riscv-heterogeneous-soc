@@ -24,8 +24,14 @@ jobs:
       - name: Build selected Verilator release in the runner
         shell: bash
         run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rv64-validation"
+          exec > >(tee "$RUNNER_TEMP/rv64-validation/verilator-build.log") 2>&1
+          free -h
+          df -h "$RUNNER_TEMP"
           sudo apt-get update
-          sudo apt-get install -y autoconf bison flex help2man build-essential git python3
+          sudo apt-get install -y autoconf bison flex libfl-dev help2man build-essential git python3
+          printf '#include <FlexLexer.h>\n' | c++ -x c++ -fsyntax-only -
           git clone --depth 1 --branch "$VERILATOR_TAG" https://github.com/verilator/verilator.git "$RUNNER_TEMP/verilator-src"
           cd "$RUNNER_TEMP/verilator-src"
           git rev-parse HEAD
@@ -43,7 +49,7 @@ jobs:
           {
             "$VERILATOR" --version
             git -C "$RUNNER_TEMP/verilator-src" rev-parse HEAD
-            dpkg-query -W autoconf bison flex help2man build-essential git python3
+            dpkg-query -W autoconf bison flex libfl-dev help2man build-essential git python3
           } > "$VALIDATION_ROOT/dependencies.log"
           cat "$VALIDATION_ROOT/dependencies.log"
 

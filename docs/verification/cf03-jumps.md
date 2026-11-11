@@ -313,3 +313,60 @@ Les 25 suites locales restent le résultat du snapshot précédent, et aucune
 réussite distante n'est revendiquée pour le correctif tant qu'elle n'est pas
 observée. Aucun changement matériel ne justifie de relancer ces 25 suites pour
 ce déplacement de variable de workflow.
+
+## 13. Deuxième essai GitHub : compilation de Verilator
+
+L'exécution [42912197307](https://github.com/myotochie/riscv-heterogeneous-soc/actions/runs/42912197307)
+porte sur le correctif `fefe06f67a8c082cdbfda167b117b4c43ca9814e`.
+Le job démarre et checkout réussit. L'étape Build selected Verilator release
+in the runner échoue avec le code 2 ; les tests RTL et la collecte des versions
+sont sautés. Le contrôle du checkout réussit. Aucun artefact n'est trouvé,
+car le répertoire des journaux n'était créé qu'après cette compilation.
+
+Le 2026-11-11, l'accès anonyme aux journaux du job 130165435057 renvoie HTTP
+403, « Must have admin rights to Repository ». L'annotation publique fournit
+uniquement le code de sortie ; elle ne permet pas d'identifier une erreur C++
+ou un manque de mémoire. Ces causes restent des hypothèses.
+
+Une reproduction locale est lancée dans `/tmp/cf03-ci-build.BE1eQk` depuis le
+tag officiel v5.040, commit `51cdf52d0f3a3e59b51fd87762646a851e9f4aff`, avec
+autoconf, configure puis make -j2. Configure réussit. Au moment de cette note,
+la compilation est toujours en cours et aucun résultat final n'est revendiqué.
+Le journal est `/tmp/cf03-ci-build.BE1eQk/build.log`.
+
+Le workflow crée désormais le répertoire des preuves dès le début de la
+compilation et duplique stdout/stderr dans `verilator-build.log`. Il conserve
+aussi les informations initiales de mémoire et d'espace disque. L'upload
+existant, exécuté même en cas d'échec, inclut ce journal. Ce correctif rend
+l'échec observable ; il ne constitue pas une correction démontrée de sa cause.
+
+Vérification locale du changement : extraction du bloc Bash du YAML, exécution
+de son préambule dans un répertoire temporaire puis erreur volontaire de code
+23. Le message est présent dans le journal et le code 23 est propagé. Parsing
+YAML et git diff --check réussissent. Aucun fichier RTL, test ou script de
+régression n'est modifié.
+
+### Cause confirmée par le journal fourni ensuite par l'utilisateur
+
+La compilation de V3ParseLex.cpp échoue dans les variantes optimisée et debug :
+`fatal error: FlexLexer.h: No such file or directory`. Le code 2 de make est
+la conséquence de cet en-tête manquant. Aucun manque de mémoire n'est démontré.
+
+L'en-tête C++ est fourni par `libfl-dev`, absent de la liste des dépendances
+du workflow. Le paquet `flex` ne suffit donc pas dans le runner observé.
+Sur la machine locale, `dpkg-query -S /usr/include/FlexLexer.h` retourne
+`libfl-dev:amd64`, ce qui explique pourquoi la même erreur n'y apparaît pas.
+Référence des paquets Ubuntu 22.04 :
+https://packages.ubuntu.com/jammy/libfl-dev.
+
+Correctif : installer explicitement libfl-dev, enregistrer sa version avec les
+autres dépendances et vérifier immédiatement que le compilateur peut inclure
+FlexLexer.h. Cette vérification utilise `-fsyntax-only` et ne produit aucun
+binaire. La journalisation précoce est conservée.
+
+Contrôles réalisés : parsing YAML, syntaxe Bash du bloc de compilation,
+présence de libfl-dev dans l'installation et dans le relevé des versions,
+exécution réussie de la commande d'inclusion C++, git diff --check.
+L'installation locale de paquets n'a pas été modifiée. La correction de cette
+cause est préparée localement ; une nouvelle CI après commit/push doit encore
+confirmer la compilation complète et l'exécution des tests RTL.

@@ -126,3 +126,27 @@ de runner.temp sont déjà dans des contextes d'étape valides. Les sources RTL,
 les bancs et les scripts restent identiques aux sources vérifiées localement.
 Le correctif n'est pas encore commité ; une nouvelle exécution distante doit
 réussir sur son commit avant fusion. main reste aec569b lors de ce contrôle.
+
+### Deuxième exécution : état observé le 2026-11-11
+
+Le correctif de contexte a été commité en `fefe06f` et poussé par l'utilisateur.
+L'exécution [42912197307](https://github.com/myotochie/riscv-heterogeneous-soc/actions/runs/42912197307)
+démarre correctement mais échoue pendant la compilation de Verilator (code 2).
+Les tests RTL n'ont pas été exécutés. Les journaux détaillés nécessitent un
+accès GitHub authentifié indisponible dans l'environnement de diagnostic.
+
+Une reproduction locale avec les sources officielles v5.040 est en cours dans
+`/tmp/cf03-ci-build.BE1eQk`. Une modification locale du workflow conserve dès
+le début le journal de compilation dans les artefacts, y compris en cas
+d'échec ; sa propagation des erreurs et son écriture de journal sont vérifiées.
+La cause distante reste à confirmer. Aucun nouveau commit, push ni merge
+n'est réalisé. Les détails et limites figurent dans la section 13 du document
+de vérification CF-03.
+
+Le journal distant fourni ensuite par l'utilisateur confirme la cause :
+`FlexLexer.h` introuvable pendant la compilation de V3ParseLex.cpp. Le workflow
+local ajoute explicitement `libfl-dev`, son relevé de version et un contrôle
+immédiat d'inclusion de l'en-tête. La compilation de ce contrôle réussit
+localement ; YAML et Bash sont vérifiés. Aucun paquet système local n'est
+installé. Le correctif attend commit/push autorisés puis une nouvelle CI ;
+aucune réussite distante ni fusion n'est encore annoncée.
