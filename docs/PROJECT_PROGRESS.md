@@ -15,10 +15,10 @@ d'un PASS Verilator.
 | Cœur cinq étages, ALU, GPR, hazards et forwarding | Existant, tests dirigés | Historique antérieur à CF-01 |
 | LD/SD et traps mémoire précis | Existant, suites dédiées | Historique intégré dans main |
 | CSR machine partiels et MRET | Existant, suites dédiées | main inclut 70ca6cd et travaux associés |
-| CF-01 : décodage six branches | Commit local | bc4a80b |
-| CF-02 : branches en EX | Commit local, suites existantes | 81eb817 |
-| CF-03 : JAL/JALR et défauts de cible | Réalisation corrigée et validée localement ; publication en cours | Commit identifié par son message et le journal Git ; manifest de validation |
-| CF-04 : chargement instructions externe | Proposition seulement | Aucun |
+| CF-01 : décodage six branches | Intégré dans main | bc4a80b |
+| CF-02 : branches en EX | Intégré dans main, suites existantes | 81eb817 |
+| CF-03 : JAL/JALR et défauts de cible | Intégré dans main, CI réussie | 66e4a88 ; correctifs CI fefe06f et 1df38f7 |
+| CF-04 : chargement instructions externe | CF-04.1/2 validés localement ; toolchain/ELF à venir | Modifications non commitées |
 | CF-05 : ISA nécessaire au C et ABI | Futur | Aucun |
 | CF-06 : trace et comparaison référence | Futur | Aucun |
 | CF-07 : multicœur et intégrations | Futur | Aucun |
@@ -67,16 +67,15 @@ contient les commandes, objectifs, limites et références des résultats réels
 - Sous-ensemble RV64I incomplet ; pas de M/A/F/D/C, LUI/AUIPC et plusieurs
   instructions de base manquent. Pas de revendication de conformité entière.
 - CSR partiels ; pas de trap général illegal instruction, pas d'interruptions.
-- ROM de programmes intégrés, NOP hors adresses définies, pas de faute fetch.
+- ROM intégrée ou image HEX externe ; pas de trap architectural de faute fetch.
 - RAM 4 Kio à lecture combinatoire ; pas de bus à latence variable ni MMIO général.
 - Pas de reset général GPR/RAM : initialisation nécessaire aux tests/logiciels.
 - Deux anciens bancs load-invalid conservés comme historiques et catalogués,
   car leurs attentes de poursuite après faute contredisent les traps précis.
 - Pas de trace architecturale complète, Spike, mesures CPI de référence ou FPGA.
-- Le workflow corrigé doit encore être exécuté sur GitHub après publication
-  autorisée ; les anciens jobs verts de main ne valident pas CF-03.
+- La CI de main valide CF-03 sur 1df38f7 ; CF-04 reste local et non publié.
 
-## Git et décisions en attente
+## Git : état initial de la revue CF-03 (historique)
 
 Branche de travail : feat/rv64-program-loader. Parent : 81eb817.
 L'audit distant du 2026-11-10, en lecture seule, a constaté main=aec569b et l'absence de la
@@ -104,11 +103,11 @@ commit final incluant ce déclenchement.
 
 ## Prochains jalons
 
-1. Réaliser le commit local autorisé et vérifier son contenu.
-2. Rétablir l'accès GitHub, pousser la branche puis attendre la CI du commit publié.
-3. Fusionner par avance rapide si main est ancêtre et si les contrôles réussissent.
-4. Audit CF-04 : mémoire d'instructions, toolchain disponible, linker/mapping.
-5. Plan détaillé puis accord avant toute implémentation CF-04.
+1. Revoir le diff et les preuves de CF-04.1/2, validés localement.
+2. Présenter le diff et obtenir un accord séparé avant commit/push.
+3. CF-04.3 : choix et vérification de toolchain ; accord avant installation.
+4. CF-04.4 : programme assemblé, placement et conversion ELF vers image.
+5. Régression complète et documentation avant toute publication CF-04.
 
 ## Publication CF-03 : incident de démarrage CI
 
@@ -135,7 +134,7 @@ démarre correctement mais échoue pendant la compilation de Verilator (code 2).
 Les tests RTL n'ont pas été exécutés. Les journaux détaillés nécessitent un
 accès GitHub authentifié indisponible dans l'environnement de diagnostic.
 
-Une reproduction locale avec les sources officielles v5.040 est en cours dans
+Une reproduction locale avec les sources officielles v5.040 avait été lancée dans
 `/tmp/cf03-ci-build.BE1eQk`. Une modification locale du workflow conserve dès
 le début le journal de compilation dans les artefacts, y compris en cas
 d'échec ; sa propagation des erreurs et son écriture de journal sont vérifiées.
@@ -150,3 +149,34 @@ immédiat d'inclusion de l'en-tête. La compilation de ce contrôle réussit
 localement ; YAML et Bash sont vérifiés. Aucun paquet système local n'est
 installé. Le correctif attend commit/push autorisés puis une nouvelle CI ;
 aucune réussite distante ni fusion n'est encore annoncée.
+
+## Clôture CF-03 et démarrage CF-04.1/2
+
+La branche main a été avancée de aec569b vers 1df38f7 le 2026-11-11 après
+autorisation. La consultation GitHub du 2026-11-12 confirme le succès de
+[la CI main 43008983835](https://github.com/myotochie/riscv-heterogeneous-soc/actions/runs/43008983835)
+sur ce SHA. Les mentions précédentes d'absence de publication sont historiques.
+
+Après audit en lecture seule et accord explicite, ajout d'une ROM externe de
+mots HEX et transmission de ses paramètres dans les frontends. Les programmes
+0–47 sont préservés ; comparaison exacte de la table réussie. Le défaut conserve le chemin historique.
+
+Validation ciblée sous Verilator 5.040 : 24 contrôles ROM positifs, neuf erreurs
+de fichier attendues, fetch externe reset/stall/flush/redirection, erreur
+d'adresse acceptée attendue et smoke pipeline JAL/JALR + SD/LD de signature 42
+réussissent. La régression complète finale depuis snapshot termine avec
+code 0 : **26 suites PASS, 0 FAIL**, dans la nuit du 12 au 13 novembre 2026.
+La première tentative, interrompue pour revue de compatibilité après 19 PASS,
+n'est pas comptée comme régression complète ; ses preuves restent conservées.
+Logs finaux : /tmp/cf04-imem-final-check.log et /tmp/cf04-full-validation.log.
+Manifest, summary.tsv et final-source-review.json : /tmp/cf04-full-validation.
+Les 127 sources exécutables courantes correspondent au snapshot final ; la
+table 0–47 et l'ordre des anciens paramètres sont conservés.
+Empreinte des sources exécutables :
+6623014a8403d98bc7359a4854c9565d8f7477b6b793b2bbe031598e90bf8dec.
+
+Documentation CF-04 : architecture, implémentation, vérification, apprentissage
+et décisions, fichiers cf04-program-loader.md dans les cinq dossiers dédiés.
+Aucun paquet installé ; aucun commit/push/merge CF-04. Toolchain et programme
+assemblé restent à préparer après revue de CF-04.1/2. Limite importante : les
+adresses fetch invalides sont des diagnostics de simulation, sans trap ISA.

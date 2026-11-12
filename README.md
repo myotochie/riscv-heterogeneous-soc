@@ -143,8 +143,8 @@ The project is expected to use:
 
 The implemented design is currently a **single RV64 five-stage experimental
 core**, with a partial integer ISA, LD/SD, forwarding, machine CSR support,
-precise data-memory traps, conditional branches, and local JAL/JALR work under
-review. The RV64GC multicore/cache/Linux table above is a **future target**,
+precise data-memory traps, conditional branches, and JAL/JALR integrated into
+main after successful CI. The RV64GC multicore/cache/Linux table above is a **future target**,
 not a statement of implemented or validated capabilities.
 
 CF-01 (`bc4a80b`) and CF-02 (`81eb817`) precede the CF-03 implementation on
@@ -184,9 +184,16 @@ Read the [CF-03 architecture](docs/architecture/cf03-jumps.md),
 [decision log](docs/decisions/cf03-jumps.md).
 
 Simulation success is not full ISA conformance, synthesis, timing closure,
-FPGA validation or a multicore demonstration. The instruction ROM still uses
-integrated programs; external bare-metal program loading is the next proposed
-CF-04 milestone.
+FPGA validation or a multicore demonstration. CF-04.1/2 add an optional external instruction HEX backend locally, while
+preserving integrated programs 0–47. The format, configuration and limitations
+are described in the [CF-04 architecture](docs/architecture/cf04-program-loader.md).
+Cross-toolchain setup, ELF conversion and an assembled bare-metal program
+remain future CF-04 milestones.
+
+```bash
+VERILATOR=/path/to/verilator-5.040/bin/verilator \
+  bash verification/scripts/run_instruction_memory.sh
+```
 
 ## License
 

@@ -1,6 +1,9 @@
 module fetch_path #(
     parameter bit RAW_TEST_PROGRAM = 1'b0,
-    parameter int unsigned PROGRAM_ID = 0
+    parameter int unsigned PROGRAM_ID = 0,
+    parameter string IMEM_FILE = "",
+    parameter int unsigned IMEM_WORDS = 1024,
+    parameter logic [63:0] IMEM_BASE = 64'h0000000080000000
 ) (
     input  logic        clk,
     input  logic        reset,
@@ -19,6 +22,26 @@ module fetch_path #(
 );
 
     logic [31:0] instr_mem_data;
+    logic [31:0] selected_instr_data;
+
+    generate if (IMEM_FILE != "") begin : g_external_imem
+        logic address_fault;
+        instruction_memory #(
+            .INIT_FILE(IMEM_FILE), .WORDS(IMEM_WORDS), .BASE_ADDR(IMEM_BASE)
+        ) u_imem (
+            .address(pc_value), .instruction(selected_instr_data), .address_fault(address_fault)
+        );
+        // Simulation diagnostic on an accepted fetch, not an architectural trap.
+        // Redirects flush IF/ID, so discarded old-path addresses are ignored.
+`ifndef SYNTHESIS
+        always_ff @(posedge clk) begin
+            if (!reset && !flush && !stall_if_id && address_fault)
+                $fatal(1, "IMEM_FETCH_ADDRESS: invalid accepted PC %h", pc_value);
+        end
+`endif
+    end else begin : g_legacy_imem
+        assign selected_instr_data = instr_mem_data;
+    end endgenerate
 
     // Instruction memory model for integration testing.
     // PROGRAM_ID=0 preserves the legacy RAW_TEST_PROGRAM selection.
@@ -758,7 +781,7 @@ pc u_pc (
         .stall     (stall_if_id),
 
         .pc_in     (pc_value),
-        .instr_in  (instr_mem_data),
+        .instr_in  (selected_instr_data),
         .valid_in  (1'b1),
 
         .pc_out    (if_id_pc),

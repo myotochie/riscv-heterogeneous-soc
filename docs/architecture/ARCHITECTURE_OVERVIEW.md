@@ -10,7 +10,7 @@ Le journal [PROJECT_PROGRESS](../PROJECT_PROGRESS.md) associe travaux et preuves
 
 ```mermaid
 flowchart LR
-    PC[PC 64 bits] --> ROM[ROM intégrée de programmes]
+    PC[PC 64 bits] --> ROM[ROM intégrée ou image HEX externe]
     ROM --> IFID[IF/ID]
     IFID --> ID[Décodeur + banc GPR + immédiats]
     ID --> IDEX[ID/EX]
@@ -35,7 +35,7 @@ flowchart LR
 | Immédiate | ADDI | Autres opérations immédiates non implémentées |
 | Données | LD, SD | 64 bits seulement, alignement naturel, pas de byte/half/word |
 | Branches | BEQ, BNE, BLT, BGE, BLTU, BGEU | Résolution EX, pas de prédiction |
-| Sauts | JAL, JALR funct3=000 | CF-03 local non commité |
+| Sauts | JAL, JALR funct3=000 | CF-03 intégré dans main, CI réussie |
 | CSR | CSRRW/RS/RC et formes immédiates | Ensemble machine limité, contrôles de conformité incomplets |
 | Retour | MRET | Machine-only, pas de changement effectif vers S/U |
 | Autres | NOP = ADDI x0,x0,0 | LUI/AUIPC, ECALL, FENCE et reste d'ISA absents |
@@ -48,12 +48,14 @@ peut pas déduire ce sous-ensemble personnalisé du seul drapeau -march=rv64i.
 - Reset PC : `0x0000000080000000`, puis pas séquentiel de quatre octets.
 - 32 indices GPR ; x0 câblé à zéro, x1–x31 sans remise à zéro générale.
 - Instruction fetch : ROM combinatoire choisie par PROGRAM_ID, NOP par défaut.
+  CF-04.1/2 ajoutent IMEM_FILE pour une image externe dense de mots 32 bits ;
+  contrôles de fichiers et d’adresses en simulation, sans trap de fetch.
   Le paramètre RAW_TEST_PROGRAM conserve la compatibilité des premiers tests.
 - Données : 4 096 octets aux adresses basses, little-endian, LD/SD alignés à 8.
   Lecture combinatoire et écriture au front ; INIT_FILE est un paramètre de
   simulation optionnel. Reset empêche l'écriture, sans effacer toute la RAM.
 - Pas de cache, TLB, MMU, bus externe, interruptions, DMA ou interface MMIO
-  générale dans le top actuel. Pas de chargement d'ELF/instructions externe.
+  générale dans le top actuel. Chargement HEX d’instructions ajouté localement ; pas de chargement ELF/BIN.
 
 ## Contrôle et précision
 
@@ -91,10 +93,11 @@ et annulations au lieu d'imprimer chaque instruction qui passe en EX.
 
 ## Évolution et portes de validation
 
-1. **Clore CF-03** : preuves propres, revue, autorisations Git séparées.
-2. **CF-04** : isoler la mémoire d'instructions, définir base/plage/format/latence,
-   charger une image externe et exécuter un assembleur à signature déterministe.
-   Conserver le backend historique et valider les IDs existants.
+1. **CF-03 clos** : main=1df38f7, CI 43008983835 réussie.
+2. **CF-04** : backend HEX et tests dirigés validés localement (CF-04.1/2),
+   26 suites réussies sous Verilator 5.040.
+   Toolchain, conversion ELF et programme assemblé restent à réaliser.
+   Voir [contrat et limites](cf04-program-loader.md).
 3. **CF-05** : matrice ISA vs code généré, LUI/AUIPC et autres ajouts nécessaires,
    ABI/pile, startup .data/.bss, linker et C sans runtime implicite.
 4. **CF-06** : référence configurée pour le sous-ensemble applicable, trace de

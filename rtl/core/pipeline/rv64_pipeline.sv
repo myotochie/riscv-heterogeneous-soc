@@ -1,7 +1,10 @@
 module rv64_pipeline #(
     parameter bit RAW_TEST_PROGRAM = 1'b0,
     parameter int unsigned PROGRAM_ID = 0,
-    parameter string MEM_INIT_FILE = ""
+    parameter string MEM_INIT_FILE = "",
+    parameter string IMEM_FILE = "",
+    parameter int unsigned IMEM_WORDS = 1024,
+    parameter logic [63:0] IMEM_BASE = 64'h0000000080000000
 ) (
     input  logic        clk,
     input  logic        reset,
@@ -158,7 +161,10 @@ module rv64_pipeline #(
 
     fetch_decode_execute_path #(
         .RAW_TEST_PROGRAM(RAW_TEST_PROGRAM),
-        .PROGRAM_ID(PROGRAM_ID)
+        .PROGRAM_ID(PROGRAM_ID),
+        .IMEM_FILE(IMEM_FILE),
+        .IMEM_WORDS(IMEM_WORDS),
+        .IMEM_BASE(IMEM_BASE)
     ) u_frontend (
         .clk                 (clk),
         .reset               (reset),

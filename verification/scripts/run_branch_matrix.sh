@@ -19,6 +19,7 @@ run_program() {
         rtl/core/core_pkg.sv \
         rtl/core/pc/pc.sv \
         rtl/core/pipeline/pipeline_if_id.sv \
+        rtl/core/memory/instruction_memory.sv \
         rtl/core/pipeline/fetch_path.sv \
         rtl/core/decoder/decoder.sv \
         rtl/core/imm_gen/imm_gen.sv \

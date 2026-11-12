@@ -116,6 +116,7 @@ run_test fetch_path \
     --top-module fetch_path \
     rtl/core/pc/pc.sv \
     rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/memory/instruction_memory.sv \
     rtl/core/pipeline/fetch_path.sv \
     "$PWD/verification/integration/tb_fetch_path.cpp"
 
@@ -133,6 +134,7 @@ run_test fetch_decode_path \
     rtl/core/core_pkg.sv \
     rtl/core/pc/pc.sv \
     rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/memory/instruction_memory.sv \
     rtl/core/pipeline/fetch_path.sv \
     rtl/core/decoder/decoder.sv \
     rtl/core/imm_gen/imm_gen.sv \
@@ -156,6 +158,7 @@ run_test fetch_decode_execute_path \
     rtl/core/core_pkg.sv \
     rtl/core/pc/pc.sv \
     rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/memory/instruction_memory.sv \
     rtl/core/pipeline/fetch_path.sv \
     rtl/core/decoder/decoder.sv \
     rtl/core/imm_gen/imm_gen.sv \
@@ -185,6 +188,7 @@ run_test rv64_pipeline \
     rtl/core/core_pkg.sv \
     rtl/core/pc/pc.sv \
     rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/memory/instruction_memory.sv \
     rtl/core/pipeline/fetch_path.sv \
     rtl/core/decoder/decoder.sv \
     rtl/core/imm_gen/imm_gen.sv \
@@ -218,6 +222,7 @@ echo ">>> Building and testing: rv64_raw_forwarding"
     rtl/core/core_pkg.sv \
     rtl/core/pc/pc.sv \
     rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/memory/instruction_memory.sv \
     rtl/core/pipeline/fetch_path.sv \
     rtl/core/decoder/decoder.sv \
     rtl/core/imm_gen/imm_gen.sv \
@@ -256,6 +261,7 @@ echo ">>> Building and testing: rv64_forwarding_priority"
     rtl/core/core_pkg.sv \
     rtl/core/pc/pc.sv \
     rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/memory/instruction_memory.sv \
     rtl/core/pipeline/fetch_path.sv \
     rtl/core/decoder/decoder.sv \
     rtl/core/imm_gen/imm_gen.sv \
@@ -308,6 +314,7 @@ echo ">>> Building and testing: fetch_decode_local_hazard"
     rtl/core/core_pkg.sv \
     rtl/core/pc/pc.sv \
     rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/memory/instruction_memory.sv \
     rtl/core/pipeline/fetch_path.sv \
     rtl/core/decoder/decoder.sv \
     rtl/core/imm_gen/imm_gen.sv \
@@ -330,6 +337,7 @@ echo ">>> load_use_hazard"
     rtl/core/core_pkg.sv \
     rtl/core/pc/pc.sv \
     rtl/core/pipeline/pipeline_if_id.sv \
+    rtl/core/memory/instruction_memory.sv \
     rtl/core/pipeline/fetch_path.sv \
     rtl/core/decoder/decoder.sv \
     rtl/core/imm_gen/imm_gen.sv \
