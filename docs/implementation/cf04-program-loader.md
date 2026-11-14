@@ -1,4 +1,4 @@
-# Implémentation CF-04.1/2
+# Implémentation CF-04 — HEX et programme assemblé
 
 ## Module instruction_memory
 
@@ -106,3 +106,96 @@ Le banc attend x1 = 0x8000000c et un writeback x10 = 42, sans trap sur
 100 cycles. Les GPR/RAM non utilisés ne sont pas supposés remis à zéro.
 L'arrêt est celui du banc après la fenêtre bornée ; la boucle reste une
 instruction matérielle normale. Aucun ELF ni appel de runtime n'est impliqué.
+
+## CF-04.3/4 — Nouveaux fichiers logiciels et scripts
+
+| Fichier | Responsabilité et changement |
+|---|---|
+| software/baremetal/cf04-smoke/start.S | Huit instructions réelles, labels _start/function/done ; appel direct et retour JALR |
+| software/baremetal/cf04-smoke/link.ld | Entrée, région IMEM, PHDR exécutable, assertions de capacité et refus des sections nécessitant un startup |
+| scripts/riscv_toolchain_env.sh | Résout et exporte les cinq outils ; aucun téléchargement ni installation implicite |
+| scripts/build_baremetal.sh | Assemble, lie, désassemble, contrôle/convertit, extrait le BIN et compare ses octets au HEX |
+| scripts/elf_to_hex.py | Analyse les structures ELF64, contrôle le mapping et les instructions, produit des mots little-endian |
+| verification/unit/elf_to_hex/tb_elf_to_hex.py | Cas positifs réels/synthétiques et corruption ciblée d'ELF ; erreurs du linker |
+| verification/integration/tb_baremetal_program.cpp | Séquence GPR complète attendue, x0 protégé, aucun trap et boucle terminale |
+| verification/scripts/run_baremetal_program.sh | Construction logicielle puis simulation sur rv64_pipeline avec l'image réellement assemblée |
+
+Le banc initial tb_external_program.cpp et les fixtures historiques restent
+inchangés. Le nouveau banc exige, dans l'ordre : x2=64, x5=40,
+x1=0x8000000c, x5=42, x10=42. Toute écriture GPR supplémentaire fait échouer
+la comparaison. La signature relue dans x10 couvre SD puis LD. Au moins trois
+slots MEM/WB du JAL terminal sont requis sur une fenêtre de 100 cycles.
+Ce n'est ni un HALT ni une trace générale des effets architecturaux.
+
+### Outils privés ou installation système
+
+La tentative sudo sans interaction a été refusée car un mot de passe est
+requis. Le paquet approuvé a donc été téléchargé et extrait sans privilège
+sous .tools/binutils-riscv64-unknown-elf-2.35.1/. Aucun paquet système n'a été
+installé. .gitignore exclut /.tools/ ; les binaires ne sont pas versionnés.
+
+Dépendance : paquet Ubuntu Jammy binutils-riscv64-unknown-elf 2.35.1-0ubuntu1,
+GNU Binutils 2.35.1, hôte amd64, cible riscv64-unknown-elf. Licence des outils
+as/ld : GNU GPL version 3 ou ultérieure, confirmée par --version et le fichier
+usr/share/doc/binutils-riscv64-unknown-elf/copyright du paquet.
+SHA256 du .deb, vérifié contre les métadonnées APT :
+e843ec1406f5ddfd19fb517c6328ec2ec71481949126986bd9d2502cfb347267.
+
+Recette de reproduction privée (Ubuntu 22.04 amd64, après accord de
+ téléchargement/extraction), depuis la racine du dépôt :
+
+```bash
+cf04_pkgdir="$(mktemp -d /tmp/cf04-binutils.XXXXXX)"
+(cd "$cf04_pkgdir" && apt-get download binutils-riscv64-unknown-elf=2.35.1-0ubuntu1)
+cf04_pkg="$cf04_pkgdir/binutils-riscv64-unknown-elf_2.35.1-0ubuntu1_amd64.deb"
+printf '%s  %s\n' e843ec1406f5ddfd19fb517c6328ec2ec71481949126986bd9d2502cfb347267 "$cf04_pkg" | sha256sum -c -
+mkdir -p .tools/binutils-riscv64-unknown-elf-2.35.1
+dpkg-deb -x "$cf04_pkg" .tools/binutils-riscv64-unknown-elf-2.35.1
+```
+
+Priorité du résolveur : RISCV_PREFIX explicite ; sinon préfixe standard dans
+PATH ; sinon emplacement privé du projet. Un outil absent provoque une erreur,
+jamais un test sauté. La variable PATH n'est pas modifiée. Les scripts de
+validation n'installent rien. Une machine différente doit fournir ces outils
+ou configurer RISCV_PREFIX ; .tools/ n'est pas copié dans le snapshot source.
+
+```bash
+# Installation système, à exécuter par l'utilisateur après accord si souhaité :
+sudo apt-get install binutils-riscv64-unknown-elf
+# Une installation existante dans un autre répertoire :
+RISCV_PREFIX=/chemin/bin/riscv64-unknown-elf- \
+BUILD_DIR=/tmp/cf04-build bash scripts/build_baremetal.sh
+# Installation privée locale déjà préparée :
+BUILD_DIR=/tmp/cf04-build bash scripts/build_baremetal.sh
+```
+
+Le build exécute as -march=rv64i -mabi=lp64 -mno-relax, puis ld --no-relax
+avec le linker script explicite. objdump -d -M no-aliases permet de lire les
+instructions réelles. readelf conserve en-têtes, segments, sections et attributs.
+La conversion directe ELF vers HEX est suivie d'une extraction indépendante
+objcopy -O binary --only-section=.text ; les octets doivent coïncider.
+
+### Conversion et préservation des fichiers
+
+La fonction convert prend des octets et retourne texte HEX et métadonnées.
+Elle vérifie toutes les plages avant copie. Les mots sont reconstruits avec
+int.from_bytes(..., 'little'), puis formatés sur huit chiffres. Les données
+BSS ne sont pas silencieusement interprétées comme des instructions.
+
+La CLI refuse un même chemin en entrée/sortie, y compris les alias symboliques
+et les liens physiques vers le même fichier. Un échec de validation laisse
+l'entrée et un éventuel ancien fichier de sortie intacts. Ce convertisseur
+reste limité au contrat text-only ; les cas ELF étendus ne sont pas supportés.
+
+### Intégration de validation et CI
+
+run_clean_regression.sh résout la toolchain avant de copier les sources,
+puis exporte son préfixe absolu si l'installation privée est utilisée.
+run_full_regression.sh inclut désormais software/ et les suffixes .S/.s/.ld
+dans les empreintes et consigne les cinq versions Binutils dans le manifest.
+La nouvelle suite est découverte automatiquement, portant le total attendu à 27.
+
+Le workflow CI ajoute le paquet binutils-riscv64-unknown-elf à l'installation
+et au relevé des versions. Cette modification prépare une future CI après
+publication ; aucun résultat distant de ce nouveau jalon n'est présumé.
+Aucun fichier RTL n'est modifié dans CF-04.3/4.

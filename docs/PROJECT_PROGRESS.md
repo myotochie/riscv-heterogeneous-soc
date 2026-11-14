@@ -18,7 +18,8 @@ d'un PASS Verilator.
 | CF-01 : décodage six branches | Intégré dans main | bc4a80b |
 | CF-02 : branches en EX | Intégré dans main, suites existantes | 81eb817 |
 | CF-03 : JAL/JALR et défauts de cible | Intégré dans main, CI réussie | 66e4a88 ; correctifs CI fefe06f et 1df38f7 |
-| CF-04 : chargement instructions externe | CF-04.1/2 validés localement ; toolchain/ELF à venir | Modifications non commitées |
+| CF-04.1/2 : mémoire instructions HEX | Publié et intégré dans main, CI réussie | d336ca7 |
+| CF-04.3/4 : chaîne assembleur/ELF | Validé localement : assembleur → ELF → HEX → RTL, 27 suites PASS | Modifications non commitées |
 | CF-05 : ISA nécessaire au C et ABI | Futur | Aucun |
 | CF-06 : trace et comparaison référence | Futur | Aucun |
 | CF-07 : multicœur et intégrations | Futur | Aucun |
@@ -103,11 +104,11 @@ commit final incluant ce déclenchement.
 
 ## Prochains jalons
 
-1. Revoir le diff et les preuves de CF-04.1/2, validés localement.
+1. Revoir le diff et les preuves de CF-04.3/4, validés localement.
 2. Présenter le diff et obtenir un accord séparé avant commit/push.
-3. CF-04.3 : choix et vérification de toolchain ; accord avant installation.
-4. CF-04.4 : programme assemblé, placement et conversion ELF vers image.
-5. Régression complète et documentation avant toute publication CF-04.
+3. Après publication autorisée, contrôler la CI avant toute fusion.
+4. Audit CF-05 : matrice ISA contre code généré, besoins GCC, ABI et startup.
+5. Plan détaillé puis accord avant compléments ISA ou installation GCC.
 
 ## Publication CF-03 : incident de démarrage CI
 
@@ -180,3 +181,36 @@ et décisions, fichiers cf04-program-loader.md dans les cinq dossiers dédiés.
 Aucun paquet installé ; aucun commit/push/merge CF-04. Toolchain et programme
 assemblé restent à préparer après revue de CF-04.1/2. Limite importante : les
 adresses fetch invalides sont des diagnostics de simulation, sans trap ISA.
+
+## CF-04.1/2 publié ; démarrage CF-04.3/4
+
+Après accord, d336ca7 a été créé, poussé et intégré par avance rapide dans main.
+Les CI [branche 43325835380](https://github.com/myotochie/riscv-heterogeneous-soc/actions/runs/43325835380)
+et [main 43371380763](https://github.com/myotochie/riscv-heterogeneous-soc/actions/runs/43371380763)
+ont réussi. Preuve locale de publication : /tmp/cf04-publication.json.
+Les mentions antérieures de CF-04 non publié décrivent la revue précédente.
+
+L'audit CF-04.3/4 puis le plan ont été approuvés le 2026-11-14. Aucune toolchain
+RISC-V n'était disponible dans les emplacements inspectés. L'installation sudo
+non interactive exigeait un mot de passe ; le paquet approuvé Binutils
+2.35.1-0ubuntu1 a été extrait dans .tools/, ignoré par Git. Son SHA256 est
+vérifié ; GNU as/ld ciblent riscv64-unknown-elf et indiquent GPLv3 ou ultérieure.
+Aucun paquet système, compilateur C ni libc n'est installé.
+
+Le programme start.S et link.ld produisent un ELF64 little-endian de huit
+instructions à 0x80000000. Le convertisseur contrôle les structures, segments,
+sections et instructions ; objcopy confirme indépendamment les octets. Les
+13 méthodes de tests Python passent avec leurs variantes négatives. Le banc
+RTL observe les cinq writebacks attendus, la signature mémoire 42, 29 slots
+de boucle terminale et aucun trap sur 100 cycles. La régression complète
+finale du 2026-11-14 termine avec code 0 : **27 suites PASS, 0 FAIL**.
+Les 135 sources exécutables correspondent au snapshot, software/ inclus ;
+aucun RTL ne change depuis d336ca7. Preuves actuelles :
+/tmp/cf04-full-validation/{manifest.json,summary.tsv,final-source-review.json}
+et /tmp/cf04-full-validation.log. Preuves antérieures 26 suites archivées dans
+/tmp/cf04-hex-only-validation. Empreinte des sources exécutables :
+776bd0cdd717465f9ac20d5a3e01018390d83bf73e4739b9a0467a002f45ad57.
+
+Les cinq documents CF-04 et les manifests sont étendus à software/ et aux
+versions Binutils. Aucun RTL n'est modifié. Aucun commit/push/merge de
+CF-04.3/4 n'est autorisé ni réalisé à ce stade.

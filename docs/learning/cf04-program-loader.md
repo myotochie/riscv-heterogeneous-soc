@@ -101,3 +101,79 @@ vide, redirection avec flush, signature fausse et délai maximal.
 5. Ce drapeau autorise toutes les instructions RV64I, alors que notre
    implémentation est partielle. LUI/AUIPC, formes W et plusieurs opérations
    immédiates ou mémoire manquent encore. Il faut examiner le code généré.
+
+## CF-04.3/4 — Comprendre la chaîne assembleur et ELF
+
+### Pourquoi un ELF avant le HEX ?
+
+L'assembleur connaît les instructions et produit un objet avec symboles et
+relocations. Dans jal x1,function, la distance finale dépend du placement.
+Le linker place le texte et résout cette relocation. Un objet .o n'est donc
+pas encore une image d'instructions prête pour notre reset PC.
+
+Un ELF lié conserve machine, classe, endianness, entrée, segments, sections
+et symboles. Le CPU ne lit aucune de ces structures : la ROM voit seulement
+les mots HEX. C'est le logiciel hôte qui vérifie que l'image correspond au
+matériel avant de lui retirer ses métadonnées.
+
+### Segments, sections et adresses
+
+Une section décrit une partie du fichier destinée à l'édition de liens et à
+l'analyse. Un PT_LOAD décrit une plage à placer en mémoire. Le convertisseur
+utilise les segments pour le placement, et vérifie les sections allouées pour
+refuser données/BSS et code mal mappé. Additionner des sections sans conserver
+leurs adresses supprimerait les trous et déplacerait les cibles de saut.
+
+VMA et LMA doivent ici être égales : pas de MMU et pas de copie de code au
+startup. e_entry doit valoir le reset matériel, car notre PC ne lit pas l'ELF.
+.memsz supérieur à filesz annoncerait une zone à initialiser sans octets dans
+le fichier, typiquement BSS. Ce jalon la refuse ; CF-05 devra définir son startup.
+
+### Expérience reproductible
+
+Exécuter build_baremetal.sh avec BUILD_DIR=/tmp/cf04-study. Lire
+program.readelf.log et program.disassembly.log, puis comparer program.hex au
+tableau de l'implémentation. La cible function est 0x80000018 ; le lien est
+0x8000000c. Les octets BIN de la première instruction sont 13 01 00 04,
+alors que le mot HEX est 04000113.
+
+Lancer ensuite run_baremetal_program.sh. Le banc attend les écritures x2=64,
+x5=40, x1=lien, x5=42 et x10=42. La séquence complète détecte notamment une
+exécution supplémentaire de la fonction sur un mauvais chemin. Le JAL final
+continue de parcourir le pipeline : « fin » signifie que le banc a observé
+les résultats et une boucle stable, pas que le matériel possède un HALT.
+La fonction utilise x5 comme résultat temporaire ; ce n'est pas une validation
+générale de l'ABI ou des appels imbriqués.
+
+### Ce que je dois maîtriser pour ce jalon
+
+Concepts : objet relogeable, symbole, relocation, édition de liens, ELF64,
+PT_LOAD, VMA/LMA, code contre données, relaxation et validation du sous-ensemble.
+Fichiers : start.S, link.ld, elf_to_hex.py, build_baremetal.sh,
+tb_elf_to_hex.py et tb_baremetal_program.cpp. Signaux : wb_we/rd/data,
+mem_wb_valid/pc/instr et trap_valid_o. Expériences : consulter les deux vues
+readelf/objdump, ajouter une .data puis constater le refus, ajouter une
+instruction non implémentée puis constater le refus du convertisseur. Faire
+ces expériences dans une copie dédiée, pas dans les sources validées.
+
+### Cinq questions — chaîne logicielle
+
+1. Que contient un ELF qu'un BIN ne contient plus ?
+2. Pourquoi le point d'entrée doit-il correspondre au reset PC ?
+3. Pourquoi désassembler après l'édition de liens ?
+4. Comment convertir quatre octets little-endian en un mot HEX ?
+5. Pourquoi Binutils suffit-il pour ce premier programme ?
+
+### Réponses — chaîne logicielle
+
+1. L'ELF conserve notamment adresses, entrée, segments, sections et symboles.
+   Le BIN est une suite d'octets sans ce contrat ; son placement doit être connu.
+2. Le matériel redémarre à une constante. Il n'analyse pas e_entry ; le build
+   impose l'égalité au lieu d'espérer qu'un point d'entrée arbitraire soit suivi.
+3. Le linker résout les relocations et peut transformer du code par relaxation.
+   Le désassemblage final montre les instructions effectivement chargées.
+4. Pour 13 01 00 04, le mot est 0x04000113. Le premier octet occupe les bits
+   faibles ; la ligne HEX représente le mot et non quatre jetons d'octets.
+5. Le source est déjà en assembleur. as et ld produisent le programme ; les
+   autres outils permettent extraction et inspection. GCC sert à compiler C
+   et demanderait de contrôler un ensemble d'instructions et un startup plus larges.

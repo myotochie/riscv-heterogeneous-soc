@@ -126,3 +126,6 @@ tmp/
 temp/
 *.tmp
 *.bak
+
+# Private cross-toolchains (downloaded binaries, never source inputs)
+/.tools/

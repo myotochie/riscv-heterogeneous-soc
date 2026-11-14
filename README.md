@@ -155,7 +155,8 @@ Current limitations and evidence are tracked in [PROJECT_PROGRESS](docs/PROJECT_
 
 ### Reproduce the complete RTL regression
 
-Install/provide Bash, Python 3, a C++ compiler, Make and Verilator >=5. The CI
+Install/provide Bash, Python 3, a native C++ compiler, Make, Verilator >=5
+and GNU RISC-V bare-metal Binutils (as, ld, objcopy, objdump, readelf). The CI
 reference version is 5.040; runners never install tools on the local system.
 
 ```bash
@@ -184,15 +185,20 @@ Read the [CF-03 architecture](docs/architecture/cf03-jumps.md),
 [decision log](docs/decisions/cf03-jumps.md).
 
 Simulation success is not full ISA conformance, synthesis, timing closure,
-FPGA validation or a multicore demonstration. CF-04.1/2 add an optional external instruction HEX backend locally, while
+FPGA validation or a multicore demonstration. CF-04.1/2 added an optional external instruction HEX backend in d336ca7, while
 preserving integrated programs 0–47. The format, configuration and limitations
 are described in the [CF-04 architecture](docs/architecture/cf04-program-loader.md).
-Cross-toolchain setup, ELF conversion and an assembled bare-metal program
-remain future CF-04 milestones.
+CF-04.3/4 now add the assembly source, linker script, validated ELF-to-HEX
+conversion and a bare-metal simulation suite locally. C, libc and general
+data/BSS startup remain future work. The build scripts never install tools.
 
 ```bash
 VERILATOR=/path/to/verilator-5.040/bin/verilator \
   bash verification/scripts/run_instruction_memory.sh
+
+# Optional RISCV_PREFIX=/path/bin/riscv64-unknown-elf-
+VERILATOR=/path/to/verilator-5.040/bin/verilator \
+  bash verification/scripts/run_baremetal_program.sh
 ```
 
 ## License

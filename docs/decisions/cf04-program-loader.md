@@ -41,3 +41,39 @@ utilise donc une fixture encodée, documentée instruction par instruction.
 Choix/version/licence de toolchain et installation éventuelle seront soumis
 à l'utilisateur au jalon suivant. Aucun support C, ELF, BIN ou conformité
 RV64I complète ne découle de la réussite de ce smoke.
+
+## D04-06 — Binutils sans compilateur C pour le premier programme
+
+Le programme assembleur a seulement besoin de as, ld, objcopy, objdump et
+readelf. Ajouter GCC/libc maintenant ne démontrerait pas que leurs instructions
+sont prises en charge. Le choix retenu est le paquet bare-metal Binutils
+2.35.1-0ubuntu1 disponible dans APT. Version, licence et empreinte sont relevées.
+L'installation système n'étant pas accessible sans saisie sudo, le même paquet
+est extrait dans un répertoire privé ignoré. Cette installation est isolée,
+reproductible et ne change pas PATH ; elle n'est pas incluse dans Git.
+
+## D04-07 — Contrôle ELF avant émission du HEX
+
+objcopy -O binary seul perd adresses, sections et entrée. La solution retenue
+est un parseur restreint ELF64 little-endian avec la bibliothèque standard
+Python, puis comparaison indépendante à objcopy pour notre .text dense.
+Alternative pyelftools : moins de parsing à maintenir, mais nouvelle dépendance
+à versionner ; alternative parsing texte readelf : fragile aux versions/locales.
+Le parseur restreint n'est pas un chargeur ELF universel : tables étendues,
+dynamique, TLS, initialisation data/BSS et LMA/VMA différents sont refusés.
+
+## D04-08 — Instructions finales inspectées et filtrées
+
+-march=rv64i reste plus large que le cœur. L'assembleur exclut C et la
+relaxation ; le convertisseur vérifie chaque mot selon une liste explicite.
+Cette liste doit évoluer avec le RTL et ses tests lors de CF-05, sans annoncer
+une conformité RV64I sur la base de ce seul filtre. Les pseudo-instructions
+call/ret et les adresses matérialisées par LUI/AUIPC ne sont pas utilisées.
+
+## D04-09 — Fin déterministe observée par le banc
+
+Le programme boucle sur JAL x0,done. Le banc contrôle la totalité des cinq
+writebacks attendus, la signature 42 et plusieurs slots de boucle sur 100 cycles.
+Alternative ECALL/EBREAK : ces traps ne sont pas implémentés. Alternative MMIO
+tohost : périphérique supplémentaire hors périmètre. Aucun HALT propriétaire
+ou mécanisme de retrait architectural CF-06 n'est ajouté.

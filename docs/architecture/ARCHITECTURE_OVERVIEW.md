@@ -96,7 +96,10 @@ et annulations au lieu d'imprimer chaque instruction qui passe en EX.
 1. **CF-03 clos** : main=1df38f7, CI 43008983835 réussie.
 2. **CF-04** : backend HEX et tests dirigés validés localement (CF-04.1/2),
    26 suites réussies sous Verilator 5.040.
-   Toolchain, conversion ELF et programme assemblé restent à réaliser.
+   CF-04.3/4 valident localement Binutils, le placement ELF, la conversion
+   contrôlée vers HEX et un programme assembleur. Le CPU continue de lire la
+   ROM ; la conversion ELF est effectuée sur l’hôte. La régression complète
+   passe 27 suites ; aucun RTL n’est modifié par ce second jalon.
    Voir [contrat et limites](cf04-program-loader.md).
 3. **CF-05** : matrice ISA vs code généré, LUI/AUIPC et autres ajouts nécessaires,
    ABI/pile, startup .data/.bss, linker et C sans runtime implicite.
