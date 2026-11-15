@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/verilator_env.sh"
-source "$(dirname "${BASH_SOURCE[0]}")/riscv_toolchain_env.sh" || exit 2
+source "$(dirname "${BASH_SOURCE[0]}")/riscv_c_toolchain_env.sh" || exit 2
 cd "$(dirname "$0")/.."
 # The timed SV bench and rootp observation benches require modern Verilator.
 version="$($VERILATOR --version)"
@@ -17,7 +17,7 @@ python3 -B - <<'PY'
 import hashlib,json,os,pathlib,subprocess,datetime
 root=pathlib.Path.cwd()
 files=sorted(p for d in ['rtl','verification','scripts','.github','software'] for p in (root/d).rglob('*')
-             if p.is_file() and p.suffix in ['.sv','.cpp','.h','.sh','.py','.yml','.md','.S','.s','.ld'])
+             if p.is_file() and p.suffix in ['.sv','.cpp','.h','.sh','.py','.yml','.md','.S','.s','.ld','.c'])
 records={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
 digest=hashlib.sha256(json.dumps(records,sort_keys=True).encode()).hexdigest()
 def output(cmd):return subprocess.check_output(cmd,text=True).strip()
@@ -27,6 +27,7 @@ manifest={'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source
           'cxx':output(['g++','--version']).splitlines()[0],
           'make':output(['make','--version']).splitlines()[0],
           'python':output(['python3','--version']),
+          'riscv_gcc':output([os.environ['RISCV_GCC'],'--version']).splitlines()[0],
           'riscv_tools':{key:output([os.environ[key],'--version']).splitlines()[0]
                          for key in ['RISCV_AS','RISCV_LD','RISCV_OBJCOPY','RISCV_OBJDUMP','RISCV_READELF']}}
 (pathlib.Path(os.environ['LOG_ROOT'])/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')

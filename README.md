@@ -156,7 +156,9 @@ Current limitations and evidence are tracked in [PROJECT_PROGRESS](docs/PROJECT_
 ### Reproduce the complete RTL regression
 
 Install/provide Bash, Python 3, a native C++ compiler, Make, Verilator >=5
-and GNU RISC-V bare-metal Binutils (as, ld, objcopy, objdump, readelf). The CI
+and GNU RISC-V bare-metal Binutils (as, ld, objcopy, objdump, readelf).
+The complete regression also requires RISC-V GCC for the CF-05.1 code-generation
+inspection suite; this suite does not execute its C probes on the RTL. The CI
 reference version is 5.040; runners never install tools on the local system.
 
 ```bash
@@ -200,6 +202,22 @@ VERILATOR=/path/to/verilator-5.040/bin/verilator \
 VERILATOR=/path/to/verilator-5.040/bin/verilator \
   bash verification/scripts/run_baremetal_program.sh
 ```
+
+## CF-05.1 code-generation inspection
+
+GCC 10.2.0 can be provided through RISCV_GCC or the standard bare-metal
+compiler name. The resolver checks the target and the selected Binutils; it
+never installs dependencies. The corpus explores O0/O1/O2, medlow/medany and
+three data placements. Unsupported instructions and expected link refusals
+remain visible in the reports. No RTL capability is added by this inspection.
+
+```bash
+BUILD_ROOT=/tmp/cf05-study bash verification/scripts/run_cf05_inventory.sh
+```
+
+Read the [CF-05.1 architecture](docs/architecture/cf05-c-toolchain.md) and
+[full ISA matrix](docs/verification/cf05-isa-matrix.md). Actual C execution,
+startup and further ISA support require subsequent approved implementation.
 
 ## License
 

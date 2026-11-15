@@ -20,7 +20,8 @@ d'un PASS Verilator.
 | CF-03 : JAL/JALR et défauts de cible | Intégré dans main, CI réussie | 66e4a88 ; correctifs CI fefe06f et 1df38f7 |
 | CF-04.1/2 : mémoire instructions HEX | Publié et intégré dans main, CI réussie | d336ca7 |
 | CF-04.3/4 : chaîne assembleur/ELF | Validé localement : assembleur → ELF → HEX → RTL, 27 suites PASS | Modifications non commitées |
-| CF-05 : ISA nécessaire au C et ABI | Futur | Aucun |
+| CF-05.1 : GCC et matrice ISA | Inventaire local validé : 28 suites PASS, RTL inchangé | Modifications non commitées |
+| CF-05.2–5 : ISA, ABI, startup et C exécuté | Futur ; plan à valider après mesures | Aucun |
 | CF-06 : trace et comparaison référence | Futur | Aucun |
 | CF-07 : multicœur et intégrations | Futur | Aucun |
 
@@ -104,11 +105,12 @@ commit final incluant ce déclenchement.
 
 ## Prochains jalons
 
-1. Revoir le diff et les preuves de CF-04.3/4, validés localement.
-2. Présenter le diff et obtenir un accord séparé avant commit/push.
-3. Après publication autorisée, contrôler la CI avant toute fusion.
-4. Audit CF-05 : matrice ISA contre code généré, besoins GCC, ABI et startup.
-5. Plan détaillé puis accord avant compléments ISA ou installation GCC.
+1. Revoir les preuves et le diff CF-05.1, validé localement sans changement RTL.
+2. Attendre un accord explicite pour commit, push, CI et fusion de ce jalon.
+3. Présenter le plan détaillé CF-05.2, en commençant par LUI/AUIPC puis les
+   autres besoins mesurés ; aucune modification RTL avant accord.
+4. Définir mapping, origine des initialiseurs, ABI/pile et startup avant C exécuté.
+5. Évaluer un runtime logiciel compatible avant toute décision d'ajouter M.
 
 ## Publication CF-03 : incident de démarrage CI
 
@@ -214,3 +216,47 @@ et /tmp/cf04-full-validation.log. Preuves antérieures 26 suites archivées dans
 Les cinq documents CF-04 et les manifests sont étendus à software/ et aux
 versions Binutils. Aucun RTL n'est modifié. Aucun commit/push/merge de
 CF-04.3/4 n'est autorisé ni réalisé à ce stade.
+
+## Publication CF-04.3/4 et démarrage CF-05.1
+
+Après accord explicite, CF-04.3/4 a été publié en 6beccd1 et intégré dans main.
+Les CI [branche 43639600602](https://github.com/myotochie/riscv-heterogeneous-soc/actions/runs/43639600602)
+et [main 43640716641](https://github.com/myotochie/riscv-heterogeneous-soc/actions/runs/43640716641)
+ont réussi. Publication consignée dans /tmp/cf04-asm-publication.json.
+L'audit CF-05 du 2026-11-15 confirme ce SHA sur main et la branche courante,
+un checkout initial propre et aucun GCC RISC-V disponible.
+
+Après accord limité à CF-05.1, GCC 10.2.0-0ubuntu1 est téléchargé et extrait
+dans .tools/, avec SHA256 vérifié. Aucun paquet système ni libc invité n'est
+installé. Le résolveur utilise les Binutils 2.35.1 déjà présents et vérifie
+que GCC sélectionne bien leur as/ld. Le premier -B trop général avait
+sélectionné l'as x86 ; le préfixe complet est désormais vérifié par les tests.
+
+Huit sondes C produisent 48 configurations objets et 144 tentatives de lien :
+117 liées non exécutées, 9 refus de relocation et 18 refus de helpers non liés.
+Les huit méthodes de tests de l'inventaire passent. La matrice de 52 formes
+indique 21 présentes dans le RTL et 28 absentes observées dans les objets.
+Six cas montrent AUIPC dans l'objet puis LUI dans l'ELF final. Aucun programme
+C de ces sondes n'est exécuté sur RTL. Aucun module RTL, garde de chargement
+CF-04 ou programme historique n'est modifié.
+
+Cinq documents CF-05.1 et une matrice détaillée sont créés. La régression
+complète finale du 2026-11-15 termine avec code 0 : **28 suites PASS, 0 FAIL**.
+Les 151 sources exécutables correspondent au snapshot ; les huit tests de
+l'inventaire incluent un oracle GNU as pour 52 formes, jamais exécutées sur RTL.
+Les preuves courantes sont /tmp/cf05-full-validation.log et
+/tmp/cf04-full-validation/{manifest.json,summary.tsv,final-source-review.json}.
+Empreinte des sources exécutables :
+ba137aa098d506302ca4622102100ca6aef553c853028fa35981c2632aa86cc7.
+Les trois rapports agrégés sont prévus dans les artefacts CI ; le workflow
+préparé n'est pas encore publié. Les choix ISA,
+startup et mapping mémoire nécessitent un plan ultérieur. Aucun commit, push
+ou merge CF-05 n'est autorisé ou réalisé à ce stade.
+
+Les répertoires de builds CF-04 sont réutilisés pour éviter de recompiler les
+modèles inchangés. Les résultats historiques restent distincts : 26 suites
+dans /tmp/cf04-hex-only-validation, puis 27 suites dans
+/tmp/cf04-assembled-validation. Les chemins /tmp/cf04-full-validation cités
+dans les anciennes entrées sont ceux de leur exécution initiale ; ce dossier
+contient désormais le bilan courant CF-05.1, et son pilote est
+/tmp/cf05-full-validation.log.

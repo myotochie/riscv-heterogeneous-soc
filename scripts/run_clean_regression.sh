@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/verilator_env.sh"
-source "$(dirname "${BASH_SOURCE[0]}")/riscv_toolchain_env.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/riscv_c_toolchain_env.sh"
 cd "$(dirname "$0")/.."
 CLEAN_ROOT="${CLEAN_ROOT:-$(mktemp -d "${TMPDIR:-/tmp}/rv64-clean.XXXXXX")}"
 mkdir -p "$CLEAN_ROOT/source"

@@ -30,7 +30,7 @@ jobs:
           free -h
           df -h "$RUNNER_TEMP"
           sudo apt-get update
-          sudo apt-get install -y autoconf bison flex libfl-dev help2man build-essential git python3 binutils-riscv64-unknown-elf
+          sudo apt-get install -y autoconf bison flex libfl-dev help2man build-essential git python3 binutils-riscv64-unknown-elf gcc-riscv64-unknown-elf
           printf '#include <FlexLexer.h>\n' | c++ -x c++ -fsyntax-only -
           git clone --depth 1 --branch "$VERILATOR_TAG" https://github.com/verilator/verilator.git "$RUNNER_TEMP/verilator-src"
           cd "$RUNNER_TEMP/verilator-src"
@@ -49,7 +49,7 @@ jobs:
           {
             "$VERILATOR" --version
             git -C "$RUNNER_TEMP/verilator-src" rev-parse HEAD
-            dpkg-query -W autoconf bison flex libfl-dev help2man build-essential git python3 binutils-riscv64-unknown-elf
+            dpkg-query -W autoconf bison flex libfl-dev help2man build-essential git python3 binutils-riscv64-unknown-elf gcc-riscv64-unknown-elf
           } > "$VALIDATION_ROOT/dependencies.log"
           cat "$VALIDATION_ROOT/dependencies.log"
 
@@ -74,4 +74,7 @@ jobs:
             ${{ runner.temp }}/rv64-validation/**/*.log
             ${{ runner.temp }}/rv64-validation/results/manifest.json
             ${{ runner.temp }}/rv64-validation/results/summary.tsv
+            ${{ runner.temp }}/rv64-validation/results/build/run_cf05_inventory/inspection/inventory.json
+            ${{ runner.temp }}/rv64-validation/results/build/run_cf05_inventory/inspection/summary.tsv
+            ${{ runner.temp }}/rv64-validation/results/build/run_cf05_inventory/inspection/isa_matrix.tsv
           if-no-files-found: warn

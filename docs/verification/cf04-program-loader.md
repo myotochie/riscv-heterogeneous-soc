@@ -68,8 +68,8 @@ La seconde régression termine avec code 0 : **26 suites PASS, 0 FAIL**,
 sous Verilator 5.040, dans la nuit du 12 au 13 novembre 2026 (heure de Paris).
 Elle inclut la nouvelle suite instruction_memory et les 25 suites antérieures.
 Log
-/tmp/cf04-full-validation.log et manifest
-/tmp/cf04-full-validation/manifest.json. Empreinte de ce snapshot :
+/tmp/cf04-hex-only-validation/driver.log et manifest
+/tmp/cf04-hex-only-validation/manifest.json. Empreinte de ce snapshot :
 57ad98e2a36851d72740e89e1aa4bbc97a9316b94a86c86f931d6060bf0c9ff0.
 Les builds externes existants sont réutilisés par make lorsque leurs entrées
 sont inchangées ; le répertoire source du snapshot ne contient aucun build.
@@ -170,8 +170,8 @@ La régression finale du 2026-11-14 termine avec code 0 : **27 suites PASS,
 0 FAIL**, sous Verilator 5.040, g++ 11.4.0, Make 4.3, Python 3.10.12 et
 GNU Binutils 2.35.1. La suite assemblée inclut les 13 méthodes Python et le
 banc RTL ; les 26 suites antérieures sont également réexécutées.
-Log : /tmp/cf04-full-validation.log. Résumé, manifest et revue finale :
-/tmp/cf04-full-validation/{summary.tsv,manifest.json,final-source-review.json}.
+Log : /tmp/cf04-assembled-validation/driver.log. Résumé, manifest et revue finale :
+/tmp/cf04-assembled-validation/{summary.tsv,manifest.json,final-source-review.json}.
 Leurs 135 sources exécutables courantes correspondent au snapshot testé ;
 aucun fichier RTL n'a changé depuis d336ca7.
 Empreinte du snapshot :

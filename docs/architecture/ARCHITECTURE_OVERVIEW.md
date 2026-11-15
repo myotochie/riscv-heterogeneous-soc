@@ -101,8 +101,11 @@ et annulations au lieu d'imprimer chaque instruction qui passe en EX.
    ROM ; la conversion ELF est effectuée sur l’hôte. La régression complète
    passe 27 suites ; aucun RTL n’est modifié par ce second jalon.
    Voir [contrat et limites](cf04-program-loader.md).
-3. **CF-05** : matrice ISA vs code généré, LUI/AUIPC et autres ajouts nécessaires,
-   ABI/pile, startup .data/.bss, linker et C sans runtime implicite.
+3. **CF-05.1** : inspection GCC locale validée par 28 suites, matrice 52 formes,
+   48 configurations objets et 144 liens (117 liés non exécutés, 27 refus
+   classés et conservés). Le RTL reste inchangé ; aucun C n’est exécuté.
+   Voir [audit et résultats](cf05-c-toolchain.md). Les lots ISA, ABI/pile,
+   startup et mapping data/BSS restent à valider avant implémentation.
 4. **CF-06** : référence configurée pour le sous-ensemble applicable, trace de
    commit correcte, comparaison différentielle puis stimuli aléatoires contraints.
 5. **CF-07** : interface mémoire arbitrable et deux cœurs simples, puis
