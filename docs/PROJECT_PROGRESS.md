@@ -19,8 +19,8 @@ d'un PASS Verilator.
 | CF-02 : branches en EX | Intégré dans main, suites existantes | 81eb817 |
 | CF-03 : JAL/JALR et défauts de cible | Intégré dans main, CI réussie | 66e4a88 ; correctifs CI fefe06f et 1df38f7 |
 | CF-04.1/2 : mémoire instructions HEX | Publié et intégré dans main, CI réussie | d336ca7 |
-| CF-04.3/4 : chaîne assembleur/ELF | Validé localement : assembleur → ELF → HEX → RTL, 27 suites PASS | Modifications non commitées |
-| CF-05.1 : GCC et matrice ISA | Inventaire local validé : 28 suites PASS, RTL inchangé | Modifications non commitées |
+| CF-04.3/4 : chaîne assembleur/ELF | Publié et intégré dans main, CI réussie | 6beccd1 |
+| CF-05.1 : GCC et matrice ISA | Publié sur la branche ; CI bloquée au contrôle GCC/Binutils avant tests RTL | d0b0a97 ; correctif local validé, publication en attente |
 | CF-05.2–5 : ISA, ABI, startup et C exécuté | Futur ; plan à valider après mesures | Aucun |
 | CF-06 : trace et comparaison référence | Futur | Aucun |
 | CF-07 : multicœur et intégrations | Futur | Aucun |
@@ -260,3 +260,14 @@ dans /tmp/cf04-hex-only-validation, puis 27 suites dans
 dans les anciennes entrées sont ceux de leur exécution initiale ; ce dossier
 contient désormais le bilan courant CF-05.1, et son pilote est
 /tmp/cf05-full-validation.log.
+
+## Correctif du résolveur GCC/Binutils — après d0b0a97
+
+- Workflow 43769889000 en échec : contrôle de cohérence des outils avant RTL.
+- Comparaison textuelle remplacée par identité du fichier exécutable, cible
+  bare-metal et caractère exécutable toujours requis ; diagnostics détaillés.
+- Vérification ciblée : neuf méthodes PASS, dont cinq scénarios de résolution.
+- Régression complète du correctif : 28 suites PASS, 0 FAIL, Verilator 5.040.
+- Aucun changement RTL ; LUI/AUIPC suspendu pour publier CF-05.1 séparément.
+- Commit, push et fusion du correctif soumis aux autorisations distinctes.
+- Résolution distante à confirmer par une nouvelle exécution CI.

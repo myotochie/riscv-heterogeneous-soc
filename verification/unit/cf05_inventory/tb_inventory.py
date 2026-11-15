@@ -87,6 +87,44 @@ class InventoryTests(unittest.TestCase):
                 self.assertTrue(all(item['status']=='unresolved_runtime_helpers' for item in row['layouts']))
         self.assertIn('no C program executed on RTL',REPORT['meaning'])
 
+    def test_compiler_resolver_tool_identity_and_diagnostics(self):
+        # Driver fixture tests path resolution only. The inventory separately
+        # compiles and links with real GCC/Binutils.
+        with tempfile.TemporaryDirectory(prefix='cf05-resolver.') as directory:
+            root=Path(directory); (root/'alias').mkdir()
+            for name in ['as','ld']:
+                (root/('alias-'+name)).symlink_to(os.environ['RISCV_'+name.upper()])
+            other=root/'other-as';other.write_text('#!/bin/sh\nexit 0\n');other.chmod(0o755)
+            compiler=root/'gcc'
+            compiler.write_text("""#!/bin/bash
+case "${!#}" in
+    -dumpmachine) printf '%s\n' "$TEST_TARGET" ;;
+    -print-prog-name=as) printf '%s\n' "$TEST_AS" ;;
+    -print-prog-name=ld) printf '%s\n' "$TEST_LD" ;;
+    *) exit 2 ;;
+esac
+""")
+            compiler.chmod(0o755)
+            env={**os.environ,'RISCV_GCC':str(compiler),
+                 'TEST_TARGET':'riscv64-unknown-elf',
+                 'TEST_AS':str(root/'alias/../alias-as'),
+                 'TEST_LD':str(root/'alias-ld')}
+            for label,override,ok in [
+                ('equivalent',{},True),
+                ('PATH lookup',{'TEST_AS':'riscv64-unknown-elf-as',
+                                'PATH':str(Path(os.environ['RISCV_AS']).parent)+os.pathsep+os.environ['PATH']},True),
+                ('different assembler',{'TEST_AS':str(other)},False),
+                ('missing linker',{'TEST_LD':str(root/'missing')},False),
+                ('wrong target',{'TEST_TARGET':'x86_64-linux-gnu'},False),
+            ]:
+                with self.subTest(case=label):
+                    result=subprocess.run(['bash','-euc','source scripts/riscv_c_toolchain_env.sh'],
+                                          cwd=ROOT,env={**env,**override},capture_output=True,text=True)
+                    self.assertEqual(result.returncode==0,ok,result.stderr)
+                    if not ok:
+                        for field in ['[ERROR]','target:','selected as:','reported as:','selected ld:','reported ld:']:
+                            self.assertIn(field,result.stderr)
+
     def test_compiler_resolver_rejects_native_or_missing_gcc(self):
         for compiler in ['/usr/bin/gcc','/nonexistent/cf05-gcc']:
             with self.subTest(compiler=compiler):

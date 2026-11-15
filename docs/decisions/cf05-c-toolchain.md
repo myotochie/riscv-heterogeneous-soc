@@ -54,3 +54,17 @@ réelles à comparer. Aucun de ces choix n'est introduit silencieusement ici.
 Ordre candidat : U-types/immédiats, formes W, tailles mémoire, puis startup/ABI
 et programmes C exécutés. Les critères incluront forwarding, x0, annulation,
 extension des résultats, bornes mémoire et effets précis des exceptions.
+
+## D05-08 — Comparer l'identité des outils, pas leurs noms de chemin
+
+Après l'échec CI de d0b0a97 avant les tests, le contrôle de découverte conserve
+la cible exacte et exige que les outils trouvés soient exécutables. `command -v`
+résout un nom rapporté par GCC ; Bash `-ef` compare ensuite les fichiers réels.
+L'alternative `readlink -f` puis comparaison de chaînes accepterait les symlinks
+mais distinguerait encore deux liens physiques vers le même fichier. Comparer
+seulement les versions accepterait deux outils différents ; supprimer le
+contrôle masquerait une mauvaise configuration. Le test d'identité exprime
+le contrat voulu sans dépendance nouvelle. Le coût est exclusivement logiciel,
+au lancement des scripts ; pipeline, CPI et synthèse ne sont pas affectés.
+Les valeurs du runner initial sont inconnues : les nouveaux diagnostics
+permettront de distinguer un alias de chemin d'une incompatibilité réelle.

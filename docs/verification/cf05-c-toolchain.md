@@ -115,3 +115,38 @@ startup, de data/BSS, de C sur RTL ou de performances. Pas de preuve exhaustive
 ISA/ELF. Les mots sont décodés pour l'inventaire, pas interprétés comme une
 machine de référence CF-06. Aucun runtime n'est validé par sa seule présence
 dans la distribution GCC. Les 21 formes RTL existantes restent un sous-ensemble.
+
+## Vérification du correctif de résolution des outils
+
+Commande ciblée :
+
+```bash
+BUILD_ROOT=/tmp/cf05-resolver-validation bash verification/scripts/run_cf05_inventory.sh
+```
+
+Résultat local : 9 méthodes Python PASS, dont le nouveau test du résolveur
+avec cinq scénarios. Les chemins équivalents sont acceptés ; un outil différent,
+un linker absent et une cible incompatible sont refusés, diagnostics contrôlés.
+Le rejet des GCC natif et absent reste testé séparément. Le pilote factice ne
+prétend pas valider une compilation : le corpus réel produit encore 48 objets,
+117 liens réussis non exécutés, 9 refus de relocation et 18 refus de helpers.
+
+L'échec distant observé concerne le workflow 43769889000 sur d0b0a97.
+La correction locale ne prouve pas encore sa résolution sur le runner : une
+nouvelle CI après autorisation de commit et push reste nécessaire.
+
+Régression complète du correctif :
+
+```bash
+VERILATOR=/opt/verilator-modern/bin/verilator \
+CLEAN_ROOT=/tmp/cf04-clean-validation LOG_ROOT=/tmp/cf04-full-validation \
+bash scripts/run_clean_regression.sh
+```
+
+Résultat : code 0, 28 suites PASS, 0 FAIL, Verilator 5.040. Le manifest et le
+bilan sont `/tmp/cf04-full-validation/manifest.json` et `summary.tsv` ; le journal
+global est `/tmp/cf05-resolver-full-validation.log`. L'empreinte du snapshot est
+`cd4f7306f71acc689609b40391d9b515452d76ec1aa58ca2cdb39e69d214577a`.
+Les sources exécutables courantes ont été comparées octet pour octet à ce
+snapshot après les tests. Les ajouts documentaires ultérieurs ne changent pas
+les sources exécutées. Aucun fichier RTL n'a été modifié.

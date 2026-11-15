@@ -35,7 +35,8 @@ privé du projet. La cible doit être riscv64-unknown-elf.
 Le premier essai avec -B suivi du seul répertoire bin sélectionnait l'as natif
 x86 et échouait sur -march=rv64i. Le préfixe retenu est maintenant le chemin
 absolu de RISCV_AS sans son suffixe as : .../riscv64-unknown-elf-.
-Le helper vérifie -print-prog-name=as et =ld contre les outils choisis.
+Le helper vérifie -print-prog-name=as et =ld contre les outils choisis,
+par identité du fichier exécutable après résolution par command -v.
 Un compilateur natif ou absent est rejeté. Cela évite une compilation croisée
 apparemment configurée qui appellerait des outils d'une autre cible.
 
@@ -110,3 +111,31 @@ aussi inventory.json, summary.tsv et isa_matrix.tsv dans les artefacts. Les suit
 RTL isolées restent utilisables séparément sans le corpus GCC.
 Aucun module RTL, filtre elf_to_hex, programme historique ou comportement
 architectural n'est modifié dans ce jalon.
+
+## Correctif de portabilité du résolveur après publication CF-05.1
+
+Le workflow 43769889000 du commit d0b0a97 échoue avant les tests :
+`[ERROR] GCC target/as/ld do not match the selected bare-metal Binutils`.
+La construction de Verilator et l'enregistrement des dépendances réussissent.
+Les chemins exacts du runner ne figuraient pas dans le diagnostic initial :
+leur différence de représentation reste une hypothèse à confirmer en CI.
+
+Le contrôle initial utilisait `!=` entre chaînes. Il rejetait donc un chemin
+avec `../` ou un lien symbolique vers le bon outil. Le nouveau contrôle garde
+la cible exacte `riscv64-unknown-elf`, résout les noms avec `command -v`,
+exige des fichiers exécutables, puis utilise le test Bash `-ef` : deux chemins
+sont équivalents lorsqu'ils désignent le même fichier (périphérique/inode).
+Il ne suffit pas que deux binaires annoncent la même version.
+
+La fonction de contrôle s'exécute dans un sous-shell pour garder ses variables
+internes locales, puis est supprimée. Les variables publiques et le préfixe
+`-B .../riscv64-unknown-elf-` restent inchangés. En cas de désaccord, le script
+affiche GCC, sa cible, les chemins sélectionnés, rapportés et résolus pour
+as/ld. Une erreur de commande GCC est également propagée. Aucun fallback
+silencieux vers l'assembleur natif n'est ajouté.
+
+Le test `test_compiler_resolver_tool_identity_and_diagnostics` utilise un
+pilote factice limité aux requêtes de découverte : chemins avec `../` et
+symlinks, nom trouvé dans PATH, assembleur distinct, linker inexistant et cible
+incorrecte. Les compilations et liens du corpus utilisent séparément les vrais
+outils. Ce correctif ne modifie aucun RTL ni format ELF/HEX.

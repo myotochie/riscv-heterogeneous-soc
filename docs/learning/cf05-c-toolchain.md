@@ -123,3 +123,39 @@ instructions sans affirmer qu'elles sont exécutables sur le cœur.
    notre expérience, GNU ld est invoqué directement sans librairie et les
    références restent visibles. Il faudra choisir une implémentation logicielle
    compatible ou évaluer M, puis tester les résultats sur la machine.
+
+## Étude complémentaire : chemins de toolchain et identité des fichiers
+
+Un nom dans PATH, un chemin absolu et un lien symbolique peuvent désigner le
+même programme. Une comparaison de chaînes vérifie leur orthographe ; Bash
+`-ef` vérifie leur identité de fichier. `command -v` doit précéder ce test si
+GCC rapporte un simple nom. Une cible GCC correcte ne suffit pas : le pilote
+peut sélectionner un assembleur différent, notamment avec un préfixe -B erroné.
+
+À relire : scripts/riscv_c_toolchain_env.sh et le test de résolution dans
+verification/unit/cf05_inventory/tb_inventory.py. Suivre RISCV_GCC,
+RISCV_GCC_TOOL_PREFIX, RISCV_AS, RISCV_LD et les chemins rapportés. Reproduire
+la suite ciblée indiquée dans le document de vérification. Aucun signal RTL
+n'intervient dans cet échec préalable à la régression.
+
+### Cinq questions sur le correctif
+
+1. Pourquoi deux chemins différents ne prouvent-ils pas un outil différent ?
+2. Pourquoi résoudre un nom avec command -v avant de comparer les fichiers ?
+3. Pourquoi conserver le contrôle de la cible GCC et celui des outils ?
+4. Que valide le pilote factice, et que ne valide-t-il pas ?
+5. Une régression locale réussie suffit-elle à déclarer la CI corrigée ?
+
+### Réponses expliquées au correctif
+
+1. Un symlink, un chemin contenant ../ et un lien physique peuvent conduire
+   au même fichier. -ef compare leur identité après résolution des chemins.
+2. Un nom tel que riscv64-unknown-elf-as se recherche dans PATH ; -ef seul
+   traiterait ce nom comme un fichier relatif au répertoire courant.
+3. La cible identifie la famille du compilateur ; les outils réellement
+   invoqués doivent également correspondre aux Binutils sélectionnés.
+4. Il teste la découverte, l'acceptation des alias et les refus diagnostiqués.
+   Il ne compile rien : les vraies compilations et liaisons du corpus sont
+   nécessaires pour vérifier l'usage effectif de la toolchain.
+5. Non. Les versions et chemins du runner peuvent différer. Il faut observer
+   une nouvelle CI sur le commit publié avant de conclure à sa résolution.
