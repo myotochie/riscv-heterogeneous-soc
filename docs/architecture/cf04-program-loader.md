@@ -85,7 +85,9 @@ La RAM données reste distincte : 4096 octets aux adresses basses, LD/SD aligné
 à huit, little-endian. MEM_INIT_FILE reste indépendant de IMEM_FILE. Le smoke
 utilise l'adresse 64 et n'exige aucune donnée initiale : SD précède LD.
 Ce mapping Harvard simplifié n'est ni une mémoire unifiée ni un contrat ELF
-complet. LUI/AUIPC et plusieurs instructions RV64I restent absentes.
+complet. Au jalon CF-04, LUI/AUIPC et plusieurs instructions RV64I restaient
+absentes. CF-05.2a ajoute désormais LUI/AUIPC ; voir
+[le lot U](cf05-upper-immediates.md) pour les preuves et limites actuelles.
 
 ## Alternatives et évolution
 

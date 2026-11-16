@@ -9,6 +9,11 @@ module imm_gen (
     // S-type: SD.
     always_comb begin
         case (instr[6:0])
+            7'b0110111, 7'b0010111: begin
+                // Sign-extend the shifted 32-bit U immediate to XLEN.
+                imm = {{32{instr[31]}}, instr[31:12], 12'b0};
+            end
+
             7'b0100011: begin
                 // S-type immediate.
                 imm = {{52{instr[31]}},

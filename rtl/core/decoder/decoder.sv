@@ -135,6 +135,13 @@ module decoder (
                 illegal_instr = 1'b0;
             end
         end
+        // U-type instructions consume an immediate, never register sources.
+        if (opcode == 7'b0110111 || opcode == 7'b0010111) begin
+            reg_write     = 1'b1;
+            alu_src       = 1'b1;
+            illegal_instr = 1'b0;
+        end
+
         // RV64I LD: 64-bit signed-offset load.
         // The memory datapath is not implemented yet.
         if (opcode == 7'b0000011 && funct3 == 3'b011) begin
@@ -205,7 +212,8 @@ module decoder (
         end
 
         if (!illegal_instr) begin
-            uses_rs1 = (opcode != 7'b1110011 && opcode != 7'b1101111) ||
+            uses_rs1 = (opcode != 7'b1110011 && opcode != 7'b1101111 &&
+                        opcode != 7'b0110111 && opcode != 7'b0010111) ||
                        (csr_valid && !funct3[2]);
             uses_rs2 = (opcode == 7'b0110011 ||
                         opcode == 7'b0100011 ||

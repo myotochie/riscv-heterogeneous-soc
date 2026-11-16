@@ -219,6 +219,25 @@ Read the [CF-05.1 architecture](docs/architecture/cf05-c-toolchain.md) and
 [full ISA matrix](docs/verification/cf05-isa-matrix.md). Actual C execution,
 startup and further ISA support require subsequent approved implementation.
 
+## CF-05.2a upper immediates
+
+LUI and AUIPC are implemented locally through the EX ALU and ordinary
+forwarding/WB paths, with RV64 sign extension and instruction-local PC.
+The live inventory reports 23 of 52 base forms present; this is not full
+RV64I compliance. The CF-05.1 matrix remains a historical baseline.
+See [architecture](docs/architecture/cf05-upper-immediates.md),
+[implementation](docs/implementation/cf05-upper-immediates.md),
+[verification](docs/verification/cf05-upper-immediates.md),
+[learning notes](docs/learning/cf05-upper-immediates.md) and
+[decisions](docs/decisions/cf05-upper-immediates.md).
+
+```bash
+VERILATOR=/path/to/verilator-5.040/bin/verilator \
+BUILD_ROOT=/tmp/cf05-upper bash verification/scripts/run_upper_immediates.sh
+```
+
+No C startup or .data loading policy is introduced by this feature.
+
 ## License
 
 This project is licensed under the Apache License 2.0.

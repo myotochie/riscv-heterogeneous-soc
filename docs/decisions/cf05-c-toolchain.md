@@ -1,5 +1,9 @@
 # CF-05.1 — Journal des décisions
 
+> Résultats historiques CF-05.1 : 21 formes présentes avant ajout RTL.
+> CF-05.2a ajoute LUI/AUIPC ; la matrice dynamique et le garde ELF
+> courants comptent 23 formes. Voir [le lot U](cf05-upper-immediates.md).
+
 ## D05-01 — Mesurer avant d'étendre le cœur
 
 Le seul drapeau rv64i autorise plus d'instructions que les 21 formes présentes.

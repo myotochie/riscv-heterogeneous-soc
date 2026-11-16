@@ -1,5 +1,9 @@
 # CF-05.1 — Architecture de l'inspection C et limites du cœur
 
+> Résultats historiques CF-05.1 : 21 formes présentes avant ajout RTL.
+> CF-05.2a ajoute LUI/AUIPC ; la matrice dynamique et le garde ELF
+> courants comptent 23 formes. Voir [le lot U](cf05-upper-immediates.md).
+
 ## Problème initial et périmètre
 
 CF-04 exécute un programme assembleur contrôlé. Cela ne démontre pas que GCC

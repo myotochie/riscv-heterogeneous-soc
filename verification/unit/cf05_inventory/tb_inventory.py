@@ -37,7 +37,7 @@ class InventoryTests(unittest.TestCase):
     def test_matrix_complete_and_evidence_files_exist(self):
         rows=isa.matrix()
         self.assertEqual(len(rows),52)
-        self.assertEqual(sum(r['rtl_status']=='present' for r in rows),21)
+        self.assertEqual(sum(r['rtl_status']=='present' for r in rows),23)
         for row in rows:
             self.assertTrue((ROOT/row['rtl_source']).is_file())
             for source in row['test_sources']:self.assertTrue((ROOT/source).is_file())
@@ -50,7 +50,7 @@ class InventoryTests(unittest.TestCase):
    4: 00008067 jalr zero,0(ra)
 ''')
         self.assertEqual([r['instruction'] for r in rows],['AUIPC','JALR'])
-        self.assertFalse(rows[0]['image_guard_accepts'])
+        self.assertTrue(rows[0]['image_guard_accepts'])
         self.assertTrue(rows[1]['image_guard_accepts'])
 
     def test_rejects_compressed_or_empty_disassembly(self):

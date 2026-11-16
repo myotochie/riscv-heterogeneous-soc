@@ -20,8 +20,9 @@ d'un PASS Verilator.
 | CF-03 : JAL/JALR et défauts de cible | Intégré dans main, CI réussie | 66e4a88 ; correctifs CI fefe06f et 1df38f7 |
 | CF-04.1/2 : mémoire instructions HEX | Publié et intégré dans main, CI réussie | d336ca7 |
 | CF-04.3/4 : chaîne assembleur/ELF | Publié et intégré dans main, CI réussie | 6beccd1 |
-| CF-05.1 : GCC et matrice ISA | Publié sur la branche ; CI bloquée au contrôle GCC/Binutils avant tests RTL | d0b0a97 ; correctif local validé, publication en attente |
-| CF-05.2–5 : ISA, ABI, startup et C exécuté | Futur ; plan à valider après mesures | Aucun |
+| CF-05.1 : GCC et matrice ISA | Fusionné dans main ; CI réussie | d0b0a97, correctif 6b38e8a ; workflow main 43932603325 |
+| CF-05.2a : LUI/AUIPC | Validé localement : 29 suites PASS, 0 FAIL ; 15 exécutions U pipeline | Modifications non commitées |
+| CF-05.2 suite–5 : ISA, ABI, startup et C exécuté | Futur ; plan à valider après mesures | Aucun |
 | CF-06 : trace et comparaison référence | Futur | Aucun |
 | CF-07 : multicœur et intégrations | Futur | Aucun |
 
@@ -105,10 +106,10 @@ commit final incluant ce déclenchement.
 
 ## Prochains jalons
 
-1. Revoir les preuves et le diff CF-05.1, validé localement sans changement RTL.
-2. Attendre un accord explicite pour commit, push, CI et fusion de ce jalon.
-3. Présenter le plan détaillé CF-05.2, en commençant par LUI/AUIPC puis les
-   autres besoins mesurés ; aucune modification RTL avant accord.
+1. Revoir le lot CF-05.2a LUI/AUIPC : régression finale 29 suites PASS, 0 FAIL.
+2. Attendre les accords distincts de commit, push et fusion du lot U.
+3. Proposer le lot ISA suivant à partir des besoins GCC mesurés, avec tests
+   de forwarding, annulation, x0 et limites avant implémentation.
 4. Définir mapping, origine des initialiseurs, ABI/pile et startup avant C exécuté.
 5. Évaluer un runtime logiciel compatible avant toute décision d'ajouter M.
 
@@ -270,4 +271,41 @@ contient désormais le bilan courant CF-05.1, et son pilote est
 - Régression complète du correctif : 28 suites PASS, 0 FAIL, Verilator 5.040.
 - Aucun changement RTL ; LUI/AUIPC suspendu pour publier CF-05.1 séparément.
 - Commit, push et fusion du correctif soumis aux autorisations distinctes.
-- Résolution distante à confirmer par une nouvelle exécution CI.
+- Résolution distante confirmée après publication : CI main 43932603325 réussie
+  sur 6b38e8a, fusion vérifiée le 2026-11-16.
+
+## CF-05.2a — Lot LUI/AUIPC approuvé
+
+- Trois modules RTL : décodage sans sources, immédiat U signé, choix A en EX.
+- Chemins ordinaires de forwarding/WB et gardes d'annulation préservés.
+- Ciblé Verilator 5.040 : 6 337 536 contrôles unitaires, quinze scénarios pipeline.
+- Tests : signe, PC 64 bits, rd0, faux load-use, bypasses, SD/LD, JALR,
+  priorités de producteurs, branch/flush/reset/stall, trap précis et MRET.
+- Filtre ELF et matrice dynamique mis à jour : 23 formes sur 52 présentes.
+- Inventaire GCC : neuf méthodes PASS, 48 objets, liens 117/9/18 inchangés ;
+  aucune exécution C sur le RTL.
+- Startup et origine des initialiseurs .data non implémentés, décision future.
+- Documentation dédiée dans les cinq dossiers ; aucun commit/push/merge autorisé
+  pour ce nouveau lot à ce stade.
+
+### Bilan final local CF-05.2a
+
+La passe finale termine avec code 0 : **29 suites PASS, 0 FAIL**, Verilator
+5.040, quinze exécutions pipeline U. Le test combinatoire produit 6 337 536
+contrôles PASS sous 5.040 et, séparément, sous 4.038. Les 157 fichiers de
+sources du manifest ont été comparés aux fichiers courants : identiques.
+Les programmes de fetch intégrés et le smoke assembleur CF-04 sont inchangés.
+
+Snapshot final :
+`7493daf1ec3cefe13c62bc034171087cf33449655cbc9c4de446a197ebeefbcf`.
+Preuves : `/tmp/cf04-full-validation/manifest.json`, `summary.tsv`,
+`cf05-upper-source-review.json` et `/tmp/cf05-upper-final-validation.log`.
+Le nom historique cf04 du répertoire de build ne désigne pas le contenu du
+lot ; le manifest identifie les sources réellement exécutées.
+
+La première passe complète (29 PASS sur les premiers tests U) est conservée
+sous `/tmp/cf05-upper-first-validation`. La revue a ensuite renforcé les
+bases mémoire, le forwarding AUIPC→JALR direct et les contrôles AUIPC ; la
+passe finale couvre ces tests. Seuls des documents ont été mis à jour après
+ce dernier snapshot, sans changement des sources exécutables. Publication
+et CI distante du lot U restent en attente d'autorisations.

@@ -33,12 +33,13 @@ flowchart LR
 |---|---|---|
 | Registre-registre | ADD, SUB, SLL, SLT, SLTU, XOR, SRL, SRA, OR, AND | Pas d'extension M, pas de formes W |
 | Immédiate | ADDI | Autres opérations immédiates non implémentées |
+| Hauts immédiats | LUI, AUIPC | Calcul EX, signe RV64, PC propre ; validation locale CF-05.2a |
 | Données | LD, SD | 64 bits seulement, alignement naturel, pas de byte/half/word |
 | Branches | BEQ, BNE, BLT, BGE, BLTU, BGEU | Résolution EX, pas de prédiction |
 | Sauts | JAL, JALR funct3=000 | CF-03 intégré dans main, CI réussie |
 | CSR | CSRRW/RS/RC et formes immédiates | Ensemble machine limité, contrôles de conformité incomplets |
 | Retour | MRET | Machine-only, pas de changement effectif vers S/U |
-| Autres | NOP = ADDI x0,x0,0 | LUI/AUIPC, ECALL, FENCE et reste d'ISA absents |
+| Autres | NOP = ADDI x0,x0,0 | ECALL, FENCE et reste d'ISA absents |
 
 Cette table n'est pas une déclaration de conformité RV64I. Le compilateur ne
 peut pas déduire ce sous-ensemble personnalisé du seul drapeau -march=rv64i.
@@ -106,6 +107,8 @@ et annulations au lieu d'imprimer chaque instruction qui passe en EX.
    classés et conservés). Le RTL reste inchangé ; aucun C n’est exécuté.
    Voir [audit et résultats](cf05-c-toolchain.md). Les lots ISA, ABI/pile,
    startup et mapping data/BSS restent à valider avant implémentation.
+   CF-05.2a ajoute localement LUI/AUIPC selon le plan approuvé, avec les
+   preuves et limites détaillées dans les documents dédiés.
 4. **CF-06** : référence configurée pour le sous-ensemble applicable, trace de
    commit correcte, comparaison différentielle puis stimuli aléatoires contraints.
 5. **CF-07** : interface mémoire arbitrable et deux cœurs simples, puis
@@ -127,3 +130,12 @@ simple et déterministe avant DMA, interruptions et algorithmes plus complexes.
 [Architecture CF-03](cf03-jumps.md) · [Implémentation](../implementation/cf03-jumps.md)
 · [Vérification](../verification/cf03-jumps.md) · [Cours](../learning/cf03-jumps.md)
 · [Décisions](../decisions/cf03-jumps.md).
+
+## CF-05.2a : immédiats U
+
+LUI/AUIPC réutilisent ADD avec zéro/PC comme opérande A et l'immédiat U signé
+comme B. Le résultat passe par EX/MEM et MEM/WB pour WB et forwarding.
+Aucune source registre ni redirection de contrôle n'est créée. Voir
+[architecture détaillée](cf05-upper-immediates.md) et
+[vérification](../verification/cf05-upper-immediates.md).
+Le startup C et la décision de mapping des initialiseurs .data restent futurs.

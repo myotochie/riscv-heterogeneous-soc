@@ -39,6 +39,7 @@ module execute_stage #(
 
     logic [63:0] forwarded_rs1;
     logic [63:0] forwarded_rs2;
+    logic [63:0] alu_operand_a;
     logic [63:0] alu_operand_b;
     logic [63:0] alu_result;
     logic is_jump;
@@ -73,12 +74,21 @@ module execute_stage #(
 
     assign forwarded_rs1_out = forwarded_rs1;
 
+    // Keep forwarded_rs1_out unchanged for branch/JALR/CSR consumers.
+    always_comb begin
+        case (instr_in[6:0])
+            7'b0110111: alu_operand_a = 64'b0;
+            7'b0010111: alu_operand_a = pc_in;
+            default: alu_operand_a = forwarded_rs1;
+        endcase
+    end
+
     assign alu_operand_b = alu_src_in
                          ? immediate_in
                          : forwarded_rs2;
 
     alu u_alu (
-        .a      (forwarded_rs1),
+        .a      (alu_operand_a),
         .b      (alu_operand_b),
         .op     (alu_op_in),
         .result (alu_result)

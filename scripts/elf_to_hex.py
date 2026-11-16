@@ -37,6 +37,8 @@ def instruction_supported(word):
         return f3 == 3  # LD/SD only
     if opcode == 0x63:
         return f3 in (0, 1, 4, 5, 6, 7)
+    if opcode in (0x37, 0x17):
+        return True  # LUI/AUIPC: every upper-immediate payload is legal
     if opcode == 0x6f:
         return True
     if opcode == 0x67:

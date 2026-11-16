@@ -1,5 +1,9 @@
 # CF-05.1 — Vérification de l'inspection GCC
 
+> Résultats historiques CF-05.1 : 21 formes présentes avant ajout RTL.
+> CF-05.2a ajoute LUI/AUIPC ; la matrice dynamique et le garde ELF
+> courants comptent 23 formes. Voir [le lot U](cf05-upper-immediates.md).
+
 ## Reproduction et sens du résultat
 
 ```bash

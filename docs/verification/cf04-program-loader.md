@@ -135,7 +135,7 @@ Le programme C, libc et un startup général ne font pas partie de ce jalon.
 | Segments | Plages hors ROM, tailles incompatibles, BSS, permissions, LMA/VMA différents et alignements invalides rejetés |
 | Chevauchement | Deux PT_LOAD superposés rejetés |
 | Sections | Données/BSS allouées, noms invalides et mapping incohérent rejetés |
-| ISA | LUI, AUIPC, ADDIW, MUL, LW, ECALL, forme JALR invalide et mots compressés rejetés |
+| ISA au jalon CF-04 | LUI, AUIPC, ADDIW, MUL, LW, ECALL, forme JALR invalide et mots compressés rejetés ; CF-05.2a remplace les deux rejets U par des acceptations après ajout RTL |
 | Relogeable | Objet as non lié refusé par le convertisseur |
 | CLI | Erreur de validation préserve entrée et sortie préexistante ; alias symlink/hardlink refusés |
 | Segments espacés | Deux mots aux offsets 0 et 12 produisent deux NOP entre eux |

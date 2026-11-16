@@ -1,5 +1,9 @@
 # CF-05.1 — Implémentation du corpus et de l'inventaire
 
+> Résultats historiques CF-05.1 : 21 formes présentes avant ajout RTL.
+> CF-05.2a ajoute LUI/AUIPC ; la matrice dynamique et le garde ELF
+> courants comptent 23 formes. Voir [le lot U](cf05-upper-immediates.md).
+
 ## Dépendances et installation privée
 
 GCC RISC-V n'était pas installé. Après accord, le paquet Ubuntu Jammy amd64

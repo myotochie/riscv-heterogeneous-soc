@@ -1,5 +1,9 @@
 # CF-05.1 — Matrice RV64I et preuves
 
+Cette matrice est le relevé historique de CF-05.1 (21 formes présentes).
+CF-05.2a ajoute LUI/AUIPC : la matrice dynamique générée par les scripts
+compte désormais 23 formes. Voir [les preuves U](cf05-upper-immediates.md).
+
 État audité au commit de départ 6beccd1, sans modification RTL. Les 52 lignes
 excluent HINTs/pseudoinstructions, Zicsr/Zifencei et privilège. Présent signifie
 support identifié dans le RTL, pas preuve exhaustive de conformité.

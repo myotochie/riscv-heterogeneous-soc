@@ -116,9 +116,14 @@ class ElfTests(unittest.TestCase):
             with self.subTest(offset=off,value=value):
                 with self.assertRaises(loader.ImageError): loader.convert(self.change(off,fmt,value))
 
+    def test_upper_instructions_accepted(self):
+        for word in [0x000002b7,0x800002b7,0xfffff017,0x80000297]:
+            with self.subTest(word=hex(word)):
+                loader.convert(self.change(self.payload,'I',word))
+
     def test_unsupported_instructions(self):
-        # LUI, AUIPC, ADDIW, MUL, compressed halfwords, LW, ECALL and malformed JALR.
-        for word in [0x000002b7,0x00000297,0x0012829b,0x025282b3,
+        # ADDIW, MUL, compressed halfwords, LW, ECALL and malformed JALR.
+        for word in [0x0012829b,0x025282b3,
                      0x00010001,0x00012503,0x00000073,0x00009067,0xffffffff]:
             with self.subTest(word=hex(word)):
                 with self.assertRaisesRegex(loader.ImageError,'unsupported instruction'):

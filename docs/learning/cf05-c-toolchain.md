@@ -1,5 +1,9 @@
 # CF-05.1 — Comprendre C, ISA, ABI et édition de liens
 
+> Résultats historiques CF-05.1 : 21 formes présentes avant ajout RTL.
+> CF-05.2a ajoute LUI/AUIPC ; la matrice dynamique et le garde ELF
+> courants comptent 23 formes. Voir [le lot U](cf05-upper-immediates.md).
+
 ## Le compilateur vise une ISA, pas notre fichier decoder.sv
 
 -march=rv64i autorise les opérations de la base RV64I complète. Le compilateur

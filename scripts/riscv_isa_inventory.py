@@ -18,7 +18,7 @@ BASE_GROUPS = {
     'system': 'FENCE ECALL EBREAK',
 }
 SUPPORTED_BASE = set(('ADD SUB SLL SLT SLTU XOR SRL SRA OR AND ADDI LD SD '
-                      'BEQ BNE BLT BGE BLTU BGEU JAL JALR').split())
+                      'BEQ BNE BLT BGE BLTU BGEU JAL JALR LUI AUIPC').split())
 _spec = importlib.util.spec_from_file_location('cf04_image_guard', ROOT/'scripts/elf_to_hex.py')
 _guard = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_guard)
@@ -90,6 +90,9 @@ def matrix():
                 elif group=='branch':
                     evidence=['verification/unit/decoder/tb_branch_decoder.cpp','verification/integration/tb_branch_matrix.cpp']
                     integration='directed matrix/hazards/collisions'
+                elif group=='upper':
+                    evidence=['verification/unit/upper_immediates/tb_upper.cpp','verification/integration/tb_upper_pipeline.cpp']
+                    integration='all immediate payloads in unit composition; directed pipeline/bypasses/annulments, not exhaustive sequential proof'
                 elif group=='jump':
                     evidence=['verification/unit/decoder/tb_jump_decoder.cpp','verification/integration/tb_jump_pipeline.cpp']
                     integration='directed links/targets/hazards/traps'
