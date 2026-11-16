@@ -1,5 +1,9 @@
 # CF-05.2a — Comprendre et défendre LUI/AUIPC
 
+> État courant après CF-05.2b : huit opérations immédiates supplémentaires,
+> soit 31 formes présentes. Les résultats ci-dessous restent ceux du jalon
+> historique ; voir [le lot immédiat](cf05-immediate-alu.md).
+
 ## Pourquoi deux instructions pour construire des adresses ?
 
 Une instruction RISC-V occupe ici 32 bits. Elle ne peut pas transporter

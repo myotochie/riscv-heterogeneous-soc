@@ -34,10 +34,20 @@ class InventoryTests(unittest.TestCase):
                     self.assertEqual(isa.decode(word),name)
                     self.assertEqual(isa._guard.instruction_supported(word),name in isa.SUPPORTED_BASE)
 
+    def test_all_op_imm_payloads_and_reserved_shift_prefixes(self):
+        accepted=0
+        for raw in range(4096):
+            for funct3 in range(8):
+                word=(raw<<20)|(7<<15)|(funct3<<12)|(5<<7)|0x13
+                expected=isa.decode(word)!='UNKNOWN'
+                self.assertEqual(isa._guard.instruction_supported(word),expected,hex(word))
+                accepted+=expected
+        self.assertEqual(accepted,24768)
+
     def test_matrix_complete_and_evidence_files_exist(self):
         rows=isa.matrix()
         self.assertEqual(len(rows),52)
-        self.assertEqual(sum(r['rtl_status']=='present' for r in rows),23)
+        self.assertEqual(sum(r['rtl_status']=='present' for r in rows),31)
         for row in rows:
             self.assertTrue((ROOT/row['rtl_source']).is_file())
             for source in row['test_sources']:self.assertTrue((ROOT/source).is_file())

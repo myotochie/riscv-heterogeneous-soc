@@ -2,7 +2,8 @@
 
 Cette matrice est le relevé historique de CF-05.1 (21 formes présentes).
 CF-05.2a ajoute LUI/AUIPC : la matrice dynamique générée par les scripts
-compte désormais 23 formes. Voir [les preuves U](cf05-upper-immediates.md).
+comptait 23 formes au jalon U. CF-05.2b ajoute les huit opérations immédiates
+et porte cette matrice dynamique à 31 formes ; voir [les preuves OP-IMM](cf05-immediate-alu.md). Voir [les preuves U](cf05-upper-immediates.md).
 
 État audité au commit de départ 6beccd1, sans modification RTL. Les 52 lignes
 excluent HINTs/pseudoinstructions, Zicsr/Zifencei et privilège. Présent signifie

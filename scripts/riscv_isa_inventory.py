@@ -18,7 +18,7 @@ BASE_GROUPS = {
     'system': 'FENCE ECALL EBREAK',
 }
 SUPPORTED_BASE = set(('ADD SUB SLL SLT SLTU XOR SRL SRA OR AND ADDI LD SD '
-                      'BEQ BNE BLT BGE BLTU BGEU JAL JALR LUI AUIPC').split())
+                      'BEQ BNE BLT BGE BLTU BGEU JAL JALR LUI AUIPC SLTI SLTIU XORI ORI ANDI SLLI SRLI SRAI').split())
 _spec = importlib.util.spec_from_file_location('cf04_image_guard', ROOT/'scripts/elf_to_hex.py')
 _guard = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_guard)
@@ -84,6 +84,9 @@ def matrix():
                 elif group=='immediate':
                     evidence=['verification/unit/decoder/tb_decoder.cpp','verification/integration/tb_rv64_pipeline.cpp']
                     integration='directed pipeline and RAW tests'
+                    if name!='ADDI':
+                        evidence=['verification/unit/immediate_alu/tb_immediate.cpp','verification/integration/tb_immediate_pipeline.cpp']
+                        integration='all imm12/funct3 combinations in unit composition; directed pipeline/hazards/annulments, not exhaustive sequential proof'
                 elif group in ('load','store'):
                     evidence=['verification/integration/tb_rv64_load.cpp','verification/integration/tb_rv64_store.cpp','verification/integration/tb_rv64_full_width.cpp']
                     integration='directed memory/hazard/fault tests'

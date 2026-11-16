@@ -1,5 +1,9 @@
 # CF-05.2a — Décisions LUI/AUIPC
 
+> État courant après CF-05.2b : huit opérations immédiates supplémentaires,
+> soit 31 formes présentes. Les résultats ci-dessous restent ceux du jalon
+> historique ; voir [le lot immédiat](cf05-immediate-alu.md).
+
 ## D-U01 — Réutiliser ADD dans EX
 
 Problème : les U requièrent zéro ou PC en opérande A et un immédiat signé en B.

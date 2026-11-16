@@ -223,7 +223,7 @@ startup and further ISA support require subsequent approved implementation.
 
 LUI and AUIPC are implemented locally through the EX ALU and ordinary
 forwarding/WB paths, with RV64 sign extension and instruction-local PC.
-The live inventory reports 23 of 52 base forms present; this is not full
+At that milestone the inventory reported 23 of 52 base forms present; this is not full
 RV64I compliance. The CF-05.1 matrix remains a historical baseline.
 See [architecture](docs/architecture/cf05-upper-immediates.md),
 [implementation](docs/implementation/cf05-upper-immediates.md),
@@ -237,6 +237,25 @@ BUILD_ROOT=/tmp/cf05-upper bash verification/scripts/run_upper_immediates.sh
 ```
 
 No C startup or .data loading policy is introduced by this feature.
+
+## CF-05.2b immediate ALU operations
+
+SLTI, SLTIU, XORI, ORI, ANDI, SLLI, SRLI and SRAI are implemented locally,
+reusing the existing ALU and EX forwarding paths. RV64 shift decoding accepts
+shamt 0–63 and rejects reserved prefixes. The live inventory now reports
+31 of 52 base forms present; full RV64I compliance and C execution remain future.
+The separate teaching datapath retains its historical R/ADDI contract.
+
+```bash
+VERILATOR=/path/to/verilator-5.040/bin/verilator \
+BUILD_ROOT=/tmp/cf05-immediate bash verification/scripts/run_immediate_alu.sh
+```
+
+See [architecture](docs/architecture/cf05-immediate-alu.md),
+[implementation](docs/implementation/cf05-immediate-alu.md),
+[verification](docs/verification/cf05-immediate-alu.md),
+[learning notes](docs/learning/cf05-immediate-alu.md) and
+[decisions](docs/decisions/cf05-immediate-alu.md).
 
 ## License
 

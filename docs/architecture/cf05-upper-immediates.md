@@ -1,5 +1,9 @@
 # CF-05.2a — Architecture LUI et AUIPC en RV64
 
+> État courant après CF-05.2b : huit opérations immédiates supplémentaires,
+> soit 31 formes présentes. Les résultats ci-dessous restent ceux du jalon
+> historique ; voir [le lot immédiat](cf05-immediate-alu.md).
+
 ## Problème et périmètre
 
 L'inventaire CF-05.1 a observé LUI/AUIPC dans les objets GCC et les ELF liés,

@@ -21,7 +21,8 @@ d'un PASS Verilator.
 | CF-04.1/2 : mémoire instructions HEX | Publié et intégré dans main, CI réussie | d336ca7 |
 | CF-04.3/4 : chaîne assembleur/ELF | Publié et intégré dans main, CI réussie | 6beccd1 |
 | CF-05.1 : GCC et matrice ISA | Fusionné dans main ; CI réussie | d0b0a97, correctif 6b38e8a ; workflow main 43932603325 |
-| CF-05.2a : LUI/AUIPC | Validé localement : 29 suites PASS, 0 FAIL ; 15 exécutions U pipeline | Modifications non commitées |
+| CF-05.2a : LUI/AUIPC | Fusionné dans main, CI réussie ; 29 suites locales PASS | dfa4ce4 ; CI main 43947114463 |
+| CF-05.2b : huit opérations immédiates | Validé localement : 30 suites PASS, 0 FAIL ; 14 exécutions OP-IMM | Modifications non commitées |
 | CF-05.2 suite–5 : ISA, ABI, startup et C exécuté | Futur ; plan à valider après mesures | Aucun |
 | CF-06 : trace et comparaison référence | Futur | Aucun |
 | CF-07 : multicœur et intégrations | Futur | Aucun |
@@ -106,8 +107,8 @@ commit final incluant ce déclenchement.
 
 ## Prochains jalons
 
-1. Revoir le lot CF-05.2a LUI/AUIPC : régression finale 29 suites PASS, 0 FAIL.
-2. Attendre les accords distincts de commit, push et fusion du lot U.
+1. Revoir le lot CF-05.2b, validé par la régression finale de 30 suites.
+2. Attendre les accords distincts de commit, push et fusion du lot immédiat.
 3. Proposer le lot ISA suivant à partir des besoins GCC mesurés, avec tests
    de forwarding, annulation, x0 et limites avant implémentation.
 4. Définir mapping, origine des initialiseurs, ABI/pile et startup avant C exécuté.
@@ -309,3 +310,53 @@ bases mémoire, le forwarding AUIPC→JALR direct et les contrôles AUIPC ; la
 passe finale couvre ces tests. Seuls des documents ont été mis à jour après
 ce dernier snapshot, sans changement des sources exécutables. Publication
 et CI distante du lot U restent en attente d'autorisations.
+
+## Publication CF-05.2a et démarrage CF-05.2b
+
+Le commit dfa4ce4 ajoute LUI/AUIPC, est poussé puis fusionné dans main par
+avance rapide après autorisations distinctes. CI de branche 43942823876 et
+CI main 43947114463 réussies ; cette dernière vérifiée le 2026-11-16.
+Le répertoire local était propre sur feat/rv64-program-loader avant le lot suivant.
+
+Après audit et validation du plan, CF-05.2b ajoute SLTI, SLTIU, XORI, ORI,
+ANDI, SLLI, SRLI, SRAI par décodage, avec contrôle funct6 des shifts et
+préservation explicite du datapath pédagogique R/ADDI. ALU/imm_gen/EX et
+registres de pipeline restent inchangés. Les anciens programmes sont préservés.
+
+Tests ciblés : 899 072 contrôles PASS sous Verilator 5.040 et 4.038, dont
+8000 encodages réservés rejetés ; huit rejets dans le datapath pédagogique ;
+14 exécutions pipeline PASS (valeurs, hazards, forwarding, consommateurs,
+rd0, branch, trap précis, MRET et contrôles externes). Le filtre ELF et la
+matrice sont alignés : 31 formes présentes. Dix méthodes d'inventaire PASS,
+48 objets et liens 117/9/18 inchangés ; toujours aucun C exécuté sur RTL.
+
+La régression complète finale termine avec 30 suites PASS, 0 FAIL depuis un
+snapshot des sources. Les cinq documents CF-05.2b sont rédigés. Les encodages réservés
+restent neutralisés sans trap général illegal-instruction, limitation
+préexistante documentée. Formes W, tailles mémoire, mapping/origine .data,
+ABI et startup restent à traiter dans des lots approuvés.
+Aucun commit, push ou merge du lot CF-05.2b n'est autorisé à ce stade.
+
+### Bilan final local CF-05.2b
+
+Code de sortie 0, 30 suites PASS, 0 FAIL sous Verilator 5.040. Le nouveau lot
+compte 899 072 contrôles combinatoires (également PASS sous 4.038), 8000
+encodages réservés rejetés, huit refus sans effet GPR dans le datapath
+pédagogique et 14 exécutions pipeline. Les 16 tests ELF et dix tests
+d'inventaire passent. Les programmes historiques sont inchangés, comme ALU,
+imm_gen et EX ; seuls decoder.sv et rv64_datapath.sv changent dans le RTL.
+
+La revue a renforcé le cas ANDI→BEQ : x2 commence à -1 puis reçoit zéro,
+pour distinguer un vrai bypass d'une valeur initiale nulle. Les tests ciblés
+renforcés passent ; une dernière régression complète couvre exactement cette
+version. La première passe (30 PASS) est archivée sous
+`/tmp/cf05-immediate-first-validation`.
+
+Snapshot final :
+`e02703c3587e7d260a1a7037c866a5888d4f9e96510a282b757e543f575b06f7`.
+Les 162 fichiers du manifest correspondent aux sources courantes.
+Preuves : `/tmp/cf05-immediate-final-validation.log`,
+`/tmp/cf04-full-validation/manifest.json`, `summary.tsv` et
+`cf05-immediate-source-review.json`. Seuls des documents sont mis à jour
+après validation, sans changement des sources exécutables.
+Commit, push et fusion du lot CF-05.2b restent en attente d'accords distincts.

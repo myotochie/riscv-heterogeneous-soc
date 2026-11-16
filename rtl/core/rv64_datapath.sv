@@ -22,7 +22,7 @@ module rv64_datapath (
     // This teaching datapath has no PC, memory, or CSR execution path.
     // Keep its original R-type/ADDI contract independent of decoder growth.
     assign supported_opcode = (instr[6:0] == 7'b0110011) ||
-                              (instr[6:0] == 7'b0010011);
+                              (instr[6:0] == 7'b0010011 && instr[14:12] == 3'b000);
     assign illegal_instr = decoded_illegal || !supported_opcode;
 
     logic [63:0] immediate;

@@ -1,8 +1,12 @@
 # CF-05.1 — Architecture de l'inspection C et limites du cœur
 
+> État courant après CF-05.2b : huit opérations immédiates supplémentaires,
+> soit 31 formes présentes. Les résultats ci-dessous restent ceux du jalon
+> historique ; voir [le lot immédiat](cf05-immediate-alu.md).
+
 > Résultats historiques CF-05.1 : 21 formes présentes avant ajout RTL.
 > CF-05.2a ajoute LUI/AUIPC ; la matrice dynamique et le garde ELF
-> courants comptent 23 formes. Voir [le lot U](cf05-upper-immediates.md).
+> au jalon CF-05.2a comptent 23 formes. Voir [le lot U](cf05-upper-immediates.md).
 
 ## Problème initial et périmètre
 

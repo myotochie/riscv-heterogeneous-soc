@@ -1,5 +1,9 @@
 # CF-05.2a — Implémentation des immédiats U
 
+> État courant après CF-05.2b : huit opérations immédiates supplémentaires,
+> soit 31 formes présentes. Les résultats ci-dessous restent ceux du jalon
+> historique ; voir [le lot immédiat](cf05-immediate-alu.md).
+
 ## RTL : trois changements locaux
 
 ### rtl/core/decoder/decoder.sv

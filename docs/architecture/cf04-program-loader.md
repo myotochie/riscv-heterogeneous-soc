@@ -163,7 +163,8 @@ Les trous entre segments deviennent NOP, sans concaténation qui perdrait les
 adresses. Les en-têtes et données tronqués sont rejetés avant indexation.
 
 Les mots émis sont filtrés selon le sous-ensemble courant : opérations R
-prises en charge, ADDI, LD/SD, six branches, JAL/JALR légaux, MRET et formes
+prises en charge, ADDI et les huit OP-IMM ajoutées par CF-05.2b, LUI/AUIPC,
+LD/SD, six branches, JAL/JALR légaux, MRET et formes
 CSR sur les cinq adresses machine connues. Cette liste est volontairement
 plus restrictive que l'ensemble RV64I autorisé par l'assembleur. Ce contrôle
 n'est pas une preuve du comportement des programmes ni de conformité des CSR.

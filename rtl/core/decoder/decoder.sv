@@ -126,13 +126,33 @@ module decoder (
                 end
             endcase
 
-        // I-type arithmetic: initially ADDI only.
+        // RV64I OP-IMM: the shift amount includes bit 25 (shamt[5]).
         end else if (opcode == 7'b0010011) begin
-            if (funct3 == 3'b000) begin
-                alu_op        = core_pkg::ALU_ADD;
-                reg_write     = 1'b1;
-                alu_src       = 1'b1;
-                illegal_instr = 1'b0;
+            case (funct3)
+                3'b000: begin alu_op = core_pkg::ALU_ADD;  illegal_instr = 1'b0; end
+                3'b010: begin alu_op = core_pkg::ALU_SLT;  illegal_instr = 1'b0; end
+                3'b011: begin alu_op = core_pkg::ALU_SLTU; illegal_instr = 1'b0; end
+                3'b100: begin alu_op = core_pkg::ALU_XOR;  illegal_instr = 1'b0; end
+                3'b110: begin alu_op = core_pkg::ALU_OR;   illegal_instr = 1'b0; end
+                3'b111: begin alu_op = core_pkg::ALU_AND;  illegal_instr = 1'b0; end
+                3'b001: begin
+                    if (instr[31:26] == 6'b000000) begin
+                        alu_op = core_pkg::ALU_SLL;
+                        illegal_instr = 1'b0;
+                    end
+                end
+                3'b101: begin
+                    case (instr[31:26])
+                        6'b000000: begin alu_op = core_pkg::ALU_SRL; illegal_instr = 1'b0; end
+                        6'b010000: begin alu_op = core_pkg::ALU_SRA; illegal_instr = 1'b0; end
+                        default: begin end // Reserved encodings remain neutralized.
+                    endcase
+                end
+                default: begin end
+            endcase
+            if (!illegal_instr) begin
+                reg_write = 1'b1;
+                alu_src   = 1'b1;
             end
         end
         // U-type instructions consume an immediate, never register sources.

@@ -210,10 +210,13 @@ int main(int argc, char** argv) {
     check_instruction(dut, encode_i_type(2047, rs1, 0b000, rd),
         rd, rs1, 31, ALU_ADD, true, false, true, "ADDI +2047");
 
-    // Unsupported immediate funct3.
+    // CF-05.2b: this formerly unsupported word is legal SLLI with shamt[5]=1.
     check_instruction(dut, encode_i_type(42, rs1, 0b001, rd),
+        rd, rs1, 10, ALU_SLL, true, false, true, "SLLI 42");
+    // Retain a negative test with a genuinely reserved shift prefix.
+    check_instruction(dut, encode_i_type(106, rs1, 0b001, rd),
         rd, rs1, 10, ALU_ADD, false, true, false,
-        "unsupported immediate funct3");
+        "reserved SLLI prefix");
 
 
 

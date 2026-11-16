@@ -32,7 +32,11 @@ def instruction_supported(word):
     if opcode == 0x33:
         return f7 == 0 or (f7 == 0x20 and f3 in (0, 5))
     if opcode == 0x13:
-        return f3 == 0  # ADDI only
+        if f3 in (0, 2, 3, 4, 6, 7):
+            return True  # Immediate arithmetic/logical operations, signed imm12
+        if f3 == 1:
+            return word >> 26 == 0  # SLLI, including shamt[5]
+        return f3 == 5 and word >> 26 in (0, 16)  # SRLI/SRAI
     if opcode in (0x03, 0x23):
         return f3 == 3  # LD/SD only
     if opcode == 0x63:

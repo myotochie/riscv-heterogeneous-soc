@@ -32,7 +32,7 @@ flowchart LR
 | Famille | Implémentation observée | Limites |
 |---|---|---|
 | Registre-registre | ADD, SUB, SLL, SLT, SLTU, XOR, SRL, SRA, OR, AND | Pas d'extension M, pas de formes W |
-| Immédiate | ADDI | Autres opérations immédiates non implémentées |
+| Immédiate 64 bits | ADDI, SLTI, SLTIU, XORI, ORI, ANDI, SLLI, SRLI, SRAI | Shifts 0–63, préfixes réservés neutralisés ; formes W absentes |
 | Hauts immédiats | LUI, AUIPC | Calcul EX, signe RV64, PC propre ; validation locale CF-05.2a |
 | Données | LD, SD | 64 bits seulement, alignement naturel, pas de byte/half/word |
 | Branches | BEQ, BNE, BLT, BGE, BLTU, BGEU | Résolution EX, pas de prédiction |
@@ -139,3 +139,14 @@ Aucune source registre ni redirection de contrôle n'est créée. Voir
 [architecture détaillée](cf05-upper-immediates.md) et
 [vérification](../verification/cf05-upper-immediates.md).
 Le startup C et la décision de mapping des initialiseurs .data restent futurs.
+
+## CF-05.2b : opérations immédiates
+
+Le décodeur sélectionne les fonctions ALU déjà présentes pour les huit formes
+OP-IMM restantes. Le contrôle des shifts utilise instr[31:26] pour préserver
+shamt[5]. Le signe de l'immédiat I est conservé même pour SLTIU et les logiques.
+Aucun changement d'ALU, d'EX ou de registres de pipeline. Le datapath pédagogique
+R/ADDI conserve son contrat par un filtre explicite. La matrice dynamique compte
+31 formes présentes sur 52. Voir [architecture](cf05-immediate-alu.md) et
+[vérification](../verification/cf05-immediate-alu.md). Le lot est validé localement par
+30 suites PASS, 0 FAIL ; aucune CI distante de ce nouveau lot avant publication.

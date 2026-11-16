@@ -121,6 +121,19 @@ class ElfTests(unittest.TestCase):
             with self.subTest(word=hex(word)):
                 loader.convert(self.change(self.payload,'I',word))
 
+    def test_immediate_alu_accepted(self):
+        for word in [0x80002293,0xfff03293,0xfff04293,0x80006293,
+                     0xfff07293,0x03f01293,0x03f05293,0x43f05293,
+                     0x02001293,0x40005293]:
+            with self.subTest(word=hex(word)):
+                loader.convert(self.change(self.payload,'I',word))
+
+    def test_reserved_shift_prefixes_rejected(self):
+        for word in [0x04001293,0x04005293,0x44005293,0x80001293]:
+            with self.subTest(word=hex(word)):
+                with self.assertRaisesRegex(loader.ImageError,'unsupported instruction'):
+                    loader.convert(self.change(self.payload,'I',word))
+
     def test_unsupported_instructions(self):
         # ADDIW, MUL, compressed halfwords, LW, ECALL and malformed JALR.
         for word in [0x0012829b,0x025282b3,
