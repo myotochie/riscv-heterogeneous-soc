@@ -233,13 +233,13 @@ int main(int argc, char** argv) {
     check_control_signals(dut, encode_i_type(-8, rs1, 0b011, rd, 0x03),
         true, true, false, "LD negative offset controls");
 
-    // LW is not implemented yet.
+    // LW is a sign-extending 32-bit load.
     check_instruction(dut, encode_i_type(16, rs1, 0b010, rd, 0x03),
-        rd, rs1, 16, ALU_ADD, false, true, false,
-        "unsupported LW");
+        rd, rs1, 16, ALU_ADD, true, false, true,
+        "LW +16");
 
     check_control_signals(dut, encode_i_type(16, rs1, 0b010, rd, 0x03),
-        false, false, false, "unsupported LW controls");
+        true, true, false, "LW controls");
 
     // Arithmetic instructions must not request a memory read.
     check_control_signals(dut, encode_i_type(42, rs1, 0b000, rd),
@@ -296,20 +296,20 @@ int main(int argc, char** argv) {
         std::cout << "[FAIL] SD negative offset controls\\n";
     }
 
-    // SW is unsupported: no memory write allowed.
+    // SW writes memory and consumes both address and data sources.
     dut.instr = encode_s_type(16, 5, 1, 0b010);
     dut.eval();
 
     ++tests_run;
-    if (dut.illegal_instr == 1 &&
-        dut.mem_write == 0 &&
+    if (dut.illegal_instr == 0 &&
+        dut.mem_write == 1 &&
         dut.reg_write == 0 &&
-        dut.uses_rs1 == 0 &&
-        dut.uses_rs2 == 0) {
-        std::cout << "[PASS] Unsupported SW cannot write memory\\n";
+        dut.uses_rs1 == 1 &&
+        dut.uses_rs2 == 1) {
+        std::cout << "[PASS] SW controls\\n";
     } else {
         ++tests_failed;
-        std::cout << "[FAIL] Unsupported SW cannot write memory\\n";
+        std::cout << "[FAIL] SW controls\\n";
     }
 
     std::cout << "\nTests run: " << tests_run << '\n';

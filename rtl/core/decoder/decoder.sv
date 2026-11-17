@@ -155,6 +155,32 @@ module decoder (
                 alu_src   = 1'b1;
             end
         end
+        if (opcode == 7'b0011011 || opcode == 7'b0111011) begin
+            case (funct3)
+                3'b000: begin
+                    if (opcode == 7'b0011011 || funct7 == 0) begin
+                        alu_op = core_pkg::ALU_ADDW; illegal_instr = 1'b0;
+                    end else if (funct7 == 7'b0100000) begin
+                        alu_op = core_pkg::ALU_SUBW; illegal_instr = 1'b0;
+                    end
+                end
+                3'b001: if (funct7 == 0) begin
+                    alu_op = core_pkg::ALU_SLLW; illegal_instr = 1'b0;
+                end
+                3'b101: begin
+                    if (funct7 == 0) begin
+                        alu_op = core_pkg::ALU_SRLW; illegal_instr = 1'b0;
+                    end else if (funct7 == 7'b0100000) begin
+                        alu_op = core_pkg::ALU_SRAW; illegal_instr = 1'b0;
+                    end
+                end
+                default: begin end
+            endcase
+            if (!illegal_instr) begin
+                reg_write = 1'b1;
+                alu_src = (opcode == 7'b0011011);
+            end
+        end
         // U-type instructions consume an immediate, never register sources.
         if (opcode == 7'b0110111 || opcode == 7'b0010111) begin
             reg_write     = 1'b1;
@@ -162,9 +188,8 @@ module decoder (
             illegal_instr = 1'b0;
         end
 
-        // RV64I LD: 64-bit signed-offset load.
-        // The memory datapath is not implemented yet.
-        if (opcode == 7'b0000011 && funct3 == 3'b011) begin
+        // LW sign-extends a 32-bit word; LD loads a doubleword.
+        if (opcode == 7'b0000011 && (funct3 == 3'b010 || funct3 == 3'b011)) begin
             alu_op        = core_pkg::ALU_ADD;
             reg_write     = 1'b1;
             mem_read      = 1'b1;
@@ -172,8 +197,8 @@ module decoder (
             illegal_instr = 1'b0;
         end
 
-        // RV64I SD: store 64 bits at rs1 + S-type immediate.
-        if (opcode == 7'b0100011 && funct3 == 3'b011) begin
+        // SW stores the low word; SD stores a doubleword.
+        if (opcode == 7'b0100011 && (funct3 == 3'b010 || funct3 == 3'b011)) begin
             alu_op        = core_pkg::ALU_ADD;
             reg_write     = 1'b0;
             mem_read      = 1'b0;
@@ -235,7 +260,7 @@ module decoder (
             uses_rs1 = (opcode != 7'b1110011 && opcode != 7'b1101111 &&
                         opcode != 7'b0110111 && opcode != 7'b0010111) ||
                        (csr_valid && !funct3[2]);
-            uses_rs2 = (opcode == 7'b0110011 ||
+            uses_rs2 = (opcode == 7'b0110011 || opcode == 7'b0111011 ||
                         opcode == 7'b0100011 ||
                         opcode == 7'b1100011);
         end

@@ -18,7 +18,8 @@ BASE_GROUPS = {
     'system': 'FENCE ECALL EBREAK',
 }
 SUPPORTED_BASE = set(('ADD SUB SLL SLT SLTU XOR SRL SRA OR AND ADDI LD SD '
-                      'BEQ BNE BLT BGE BLTU BGEU JAL JALR LUI AUIPC SLTI SLTIU XORI ORI ANDI SLLI SRLI SRAI').split())
+                      'BEQ BNE BLT BGE BLTU BGEU JAL JALR LUI AUIPC SLTI SLTIU XORI ORI ANDI SLLI SRLI SRAI '
+                      'ADDIW SLLIW SRLIW SRAIW ADDW SUBW SLLW SRLW SRAW LW SW').split())
 _spec = importlib.util.spec_from_file_location('cf04_image_guard', ROOT/'scripts/elf_to_hex.py')
 _guard = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_guard)
@@ -90,12 +91,18 @@ def matrix():
                 elif group in ('load','store'):
                     evidence=['verification/integration/tb_rv64_load.cpp','verification/integration/tb_rv64_store.cpp','verification/integration/tb_rv64_full_width.cpp']
                     integration='directed memory/hazard/fault tests'
+                    if name in ('LW','SW'):
+                        evidence=['verification/unit/word_memory/tb_word_memory.cpp','verification/integration/tb_word_memory_pipeline.cpp']
+                        integration='directed word-size memory, pipeline hazards and precise fault tests'
                 elif group=='branch':
                     evidence=['verification/unit/decoder/tb_branch_decoder.cpp','verification/integration/tb_branch_matrix.cpp']
                     integration='directed matrix/hazards/collisions'
                 elif group=='upper':
                     evidence=['verification/unit/upper_immediates/tb_upper.cpp','verification/integration/tb_upper_pipeline.cpp']
                     integration='all immediate payloads in unit composition; directed pipeline/bypasses/annulments, not exhaustive sequential proof'
+                elif group in ('word_immediate','word_register'):
+                    evidence=['verification/unit/word_alu/tb_word.cpp','verification/integration/tb_word_pipeline.cpp']
+                    integration='directed pipeline and combinational word-operation tests; not exhaustive sequential proof'
                 elif group=='jump':
                     evidence=['verification/unit/decoder/tb_jump_decoder.cpp','verification/integration/tb_jump_pipeline.cpp']
                     integration='directed links/targets/hazards/traps'

@@ -220,6 +220,7 @@ module rv64_pipeline #(
         .clk          (clk),
         .reset        (reset),
         .mem_read     (ex_mem_valid && ex_mem_mem_read && !mret_retire),
+        .word_access  (ex_mem_instr[14:12] == 3'b010),
         .mem_write    (ex_mem_valid && ex_mem_mem_write
                    && !stall && !flush && !mret_retire),
         .address      (ex_mem_alu_result),

@@ -37,8 +37,12 @@ def instruction_supported(word):
         if f3 == 1:
             return word >> 26 == 0  # SLLI, including shamt[5]
         return f3 == 5 and word >> 26 in (0, 16)  # SRLI/SRAI
+    if opcode == 0x1b:
+        return f3 == 0 or (f3 == 1 and f7 == 0) or (f3 == 5 and f7 in (0, 32))
+    if opcode == 0x3b:
+        return (f3 == 0 and f7 in (0, 32)) or (f3 == 1 and f7 == 0) or (f3 == 5 and f7 in (0, 32))
     if opcode in (0x03, 0x23):
-        return f3 == 3  # LD/SD only
+        return f3 in (2, 3)  # LW/LD and SW/SD
     if opcode == 0x63:
         return f3 in (0, 1, 4, 5, 6, 7)
     if opcode in (0x37, 0x17):

@@ -10,7 +10,8 @@ package core_pkg;
         ALU_SRL,
         ALU_SRA,
         ALU_SLT,
-        ALU_SLTU
+        ALU_SLTU,
+        ALU_ADDW, ALU_SUBW, ALU_SLLW, ALU_SRLW, ALU_SRAW
     } alu_op_t;
 
 endpackage

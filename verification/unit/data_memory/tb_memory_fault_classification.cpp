@@ -10,6 +10,7 @@ int main(int argc, char** argv) {
     dut.clk = 0;
     dut.reset = 0;
     dut.mem_read = 0;
+    dut.word_access = 0;
     dut.mem_write = 0;
     dut.address = 0;
     dut.write_data = 0;

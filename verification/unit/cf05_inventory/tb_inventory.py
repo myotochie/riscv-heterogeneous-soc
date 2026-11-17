@@ -44,10 +44,20 @@ class InventoryTests(unittest.TestCase):
                 accepted+=expected
         self.assertEqual(accepted,24768)
 
+    def test_word_encodings_and_guard(self):
+        for opcode in (0x1b, 0x3b):
+            for funct3 in range(8):
+                for funct7 in range(128):
+                    word=(funct7<<25)|(7<<20)|(3<<15)|(funct3<<12)|(5<<7)|opcode
+                    expected=(funct3==0 and (opcode==0x1b or funct7 in (0,32))) or \
+                             (funct3==1 and funct7==0) or (funct3==5 and funct7 in (0,32))
+                    self.assertEqual(isa._guard.instruction_supported(word),expected,hex(word))
+                    self.assertEqual(isa.decode(word)!='UNKNOWN',expected,hex(word))
+
     def test_matrix_complete_and_evidence_files_exist(self):
         rows=isa.matrix()
         self.assertEqual(len(rows),52)
-        self.assertEqual(sum(r['rtl_status']=='present' for r in rows),31)
+        self.assertEqual(sum(r['rtl_status']=='present' for r in rows),42)
         for row in rows:
             self.assertTrue((ROOT/row['rtl_source']).is_file())
             for source in row['test_sources']:self.assertTrue((ROOT/source).is_file())

@@ -360,3 +360,49 @@ Preuves : `/tmp/cf05-immediate-final-validation.log`,
 `cf05-immediate-source-review.json`. Seuls des documents sont mis à jour
 après validation, sans changement des sources exécutables.
 Commit, push et fusion du lot CF-05.2b restent en attente d'accords distincts.
+
+## CF-05.2c — Instructions W en cours
+
+Après confirmation par l'utilisateur que la CI du lot CF-05.2b est bonne,
+le lot suivant ajoute ADDIW, SLLIW, SRLIW, SRAIW, ADDW, SUBW, SLLW,
+SRLW et SRAW. Le dernier lot CF-05.2b est commité en `fba48fa` ; les
+mentions antérieures de modifications non commitées sont historiques.
+L'état de fusion de ce commit dans main n'a pas été vérifié ici.
+
+Le décodage, l'ALU, le filtre ELF et l'inventaire sont adaptés. Le banc
+combinatoire teste les encodages et les limites ; le programme pipeline couvre
+les neuf formes, les dépendances, le forwarding, x0 et des encodages réservés.
+La suite ELF comporte 17 tests et l'inventaire 11 tests. La validation depuis
+un snapshot propre utilise Verilator 5.040 : groupe `run_unit_tests.sh` PASS
+et 30 suites `verification/scripts/run_*.sh` PASS, 0 échec. Le groupe unitaire
+provient du lanceur séquentiel, arrêté ensuite pour éviter de répéter les
+suites déjà lancées en parallèle dans des répertoires séparés. Le banc W
+effectue 710 401 contrôles combinatoires et 14 writebacks pipeline attendus.
+Les 166 sources du manifest correspondent aux fichiers courants ; empreinte
+`59785e4310364cc7451334d9a5bdbb08023062caab12136e1c0f7fcb3ef25145`.
+Preuves locales : `/tmp/rv64-word-clean-20261117/results/manifest.json` et
+`summary.tsv`, `/tmp/rv64-word-parallel-results/summary.tsv` et les journaux
+associés. Ces chemins temporaires ne sont pas une preuve de CI distante.
+Aucun programme C n'est exécuté sur le RTL dans ce lot.
+
+## CF-05.2d — Accès LW/SW
+
+À la demande de poursuivre sans commit ni push, le lot W reste dans l'arbre de
+travail et LW/SW sont ajoutés par-dessus. LW lit un mot little-endian et
+l'étend avec son signe ; SW écrit quatre octets. La RAM contrôle l'alignement
+et les limites selon la taille, avec la même priorité des fautes qu'avant.
+Le datapath transporte déjà l'instruction jusqu'à MEM et son funct3 permet
+la sélection de taille sans ajouter de registre de contrôle.
+
+La suite ciblée valide la préservation des octets voisins, les limites,
+l'extension de signe et la suppression des écritures fautives. En pipeline,
+cinq programmes dirigés passent : accès normaux, load-use et quatre fautes
+(load/store, mal aligné/hors limites), avec contrôle des causes, PC et valeurs
+associées. La régression des deux lots depuis un snapshot propre termine avec
+**32 suites PASS, 0 FAIL** sous Verilator 5.040 : le groupe unitaire et les
+31 scripts `verification/scripts/run_*.sh` ont été exécutés en parallèle avec
+des répertoires de build distincts. Les 170 sources du manifeste correspondent
+aux fichiers courants. Empreinte :
+`bdd6fade8047f1b300debe5f6c21cdcecdef31742f53317a9914c436ef4bbcb5`.
+Manifeste, bilan et journaux locaux : `/tmp/rv64-word-memory-regression/results`.
+Ces résultats ne sont pas une CI distante. Aucun commit ni push n'a été fait.

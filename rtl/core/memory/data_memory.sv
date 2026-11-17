@@ -7,6 +7,7 @@ module data_memory #(
 
     input  logic        mem_read,
     input  logic        mem_write,
+    input  logic        word_access,
 
     input  logic [63:0] address,
     input  logic [63:0] write_data,
@@ -34,11 +35,12 @@ module data_memory #(
     logic address_in_range;
     logic [ADDR_BITS-1:0] byte_index;
 
-    // Only naturally aligned 64-bit accesses are supported.
+    // Natural alignment and range are checked for the actual access size.
     always_comb begin
-        address_aligned = (address[2:0] == 3'b000);
-        address_in_range =
-            (address <= (64'(MEM_SIZE_BYTES) - 64'd8));
+        address_aligned = word_access ? (address[1:0] == 2'b00) : (address[2:0] == 3'b000);
+        address_in_range = word_access ?
+            (MEM_SIZE_BYTES >= 4 && address <= (64'(MEM_SIZE_BYTES) - 64'd4)) :
+            (MEM_SIZE_BYTES >= 8 && address <= (64'(MEM_SIZE_BYTES) - 64'd8));
 
         address_valid = address_aligned && address_in_range;
 
@@ -66,8 +68,10 @@ module data_memory #(
                 access_fault = 1'b1;
             end else if (mem_read) begin
                 for (int i = 0; i < 8; i++) begin
-                    read_data[i*8 +: 8] = mem[byte_index + ADDR_BITS'(i)];
+                    if (!word_access || i < 4)
+                        read_data[i*8 +: 8] = mem[byte_index + ADDR_BITS'(i)];
                 end
+                if (word_access) read_data[63:32] = {32{read_data[31]}};
             end
         end
     end
@@ -76,7 +80,8 @@ module data_memory #(
     always_ff @(posedge clk) begin
         if (!reset && mem_write && address_valid) begin
             for (int i = 0; i < 8; i++) begin
-                mem[byte_index + ADDR_BITS'(i)] <= write_data[i*8 +: 8];
+                if (!word_access || i < 4)
+                    mem[byte_index + ADDR_BITS'(i)] <= write_data[i*8 +: 8];
             end
         end
     end

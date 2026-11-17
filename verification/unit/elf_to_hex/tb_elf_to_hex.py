@@ -134,10 +134,30 @@ class ElfTests(unittest.TestCase):
                 with self.assertRaisesRegex(loader.ImageError,'unsupported instruction'):
                     loader.convert(self.change(self.payload,'I',word))
 
+    def test_word_instructions_and_reserved_encodings(self):
+        for word in [0x0012829b,0x01f2929b,0x01f2d29b,0x41f2d29b,
+                     0x006282bb,0x406282bb,0x006292bb,0x0062d2bb,0x4062d2bb]:
+            with self.subTest(word=hex(word)):
+                loader.convert(self.change(self.payload,'I',word))
+        for word in [0x0200129b,0x0200529b,0x020002bb,0x400012bb]:
+            with self.subTest(word=hex(word)):
+                with self.assertRaisesRegex(loader.ImageError,'unsupported instruction'):
+                    loader.convert(self.change(self.payload,'I',word))
+
+    def test_lw_sw_accepted_other_memory_sizes_rejected(self):
+        for word in [0x00012503, 0x00a12223]:
+            with self.subTest(word=hex(word)):
+                loader.convert(self.change(self.payload,'I',word))
+        for word in [0x00010503, 0x00011503, 0x00014503, 0x00016503,
+                     0x00a10223, 0x00a11223]:
+            with self.subTest(word=hex(word)):
+                with self.assertRaisesRegex(loader.ImageError,'unsupported instruction'):
+                    loader.convert(self.change(self.payload,'I',word))
+
     def test_unsupported_instructions(self):
-        # ADDIW, MUL, compressed halfwords, LW, ECALL and malformed JALR.
-        for word in [0x0012829b,0x025282b3,
-                     0x00010001,0x00012503,0x00000073,0x00009067,0xffffffff]:
+        # MUL, compressed halfwords, LB, ECALL and malformed JALR.
+        for word in [0x025282b3,
+                     0x00010001,0x00010503,0x00000073,0x00009067,0xffffffff]:
             with self.subTest(word=hex(word)):
                 with self.assertRaisesRegex(loader.ImageError,'unsupported instruction'):
                     loader.convert(self.change(self.payload,'I',word))

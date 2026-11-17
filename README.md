@@ -242,7 +242,7 @@ No C startup or .data loading policy is introduced by this feature.
 
 SLTI, SLTIU, XORI, ORI, ANDI, SLLI, SRLI and SRAI are implemented locally,
 reusing the existing ALU and EX forwarding paths. RV64 shift decoding accepts
-shamt 0–63 and rejects reserved prefixes. The live inventory now reports
+shamt 0–63 and rejects reserved prefixes. At that milestone the inventory reported
 31 of 52 base forms present; full RV64I compliance and C execution remain future.
 The separate teaching datapath retains its historical R/ADDI contract.
 
@@ -260,3 +260,29 @@ See [architecture](docs/architecture/cf05-immediate-alu.md),
 ## License
 
 This project is licensed under the Apache License 2.0.
+
+## CF-05.2c word operations
+
+The nine RV64 word arithmetic and shift forms are implemented with 32-bit
+results sign-extended to 64 bits. At that milestone the inventory reported 40 of 52 base
+forms; full RV64I compliance and C execution remain future work. See the
+[architecture](docs/architecture/cf05-word-alu.md) and
+[verification notes](docs/verification/cf05-word-alu.md).
+
+```bash
+VERILATOR=/path/to/verilator-5.040/bin/verilator \
+  bash verification/scripts/run_word_alu.sh
+```
+
+## CF-05.2d word memory accesses
+
+LW and SW add naturally aligned 32-bit loads and stores; LW sign-extends to
+64 bits. The live inventory now reports 42 of 52 base forms. Other memory
+sizes, full RV64I compliance and C execution remain future work. See the
+[architecture](docs/architecture/cf05-word-memory.md) and
+[verification notes](docs/verification/cf05-word-memory.md).
+
+```bash
+VERILATOR=/path/to/verilator-5.040/bin/verilator \
+  bash verification/scripts/run_word_memory.sh
+```
